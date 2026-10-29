@@ -1,0 +1,24 @@
+[
+  {
+    "file": "rifle.glb",
+    "title": "FPS AK-74m animations",
+    "author": "Cransh; AK model by creationwasteland; FP arms by DJMaesen",
+    "license": "CC-BY-4.0",
+    "source": "https://sketchfab.com/3d-models/fps-ak-74m-animations-94be8385c402474cacd39bc096c6ca14",
+    "mirror": "https://github.com/rohanvashisht1234/threejs-zombieshooter-game/blob/main/public/fps_gun_person_view.glb",
+    "modifications": "Runtime position, scale and clip speed adjusted; glTF coordinate conversion preserved.",
+    "sha256": "060c2c34c51204eace1c2ebe75b19f8cc8d94a1ab7052672d90b6a573334e2c1",
+    "bytes": 1877904
+  },
+  {
+    "file": "pistol.glb",
+    "title": "FPS pistol animations",
+    "author": "Cransh; pistol by raimeiyonke; FP arms by DJMaesen",
+    "license": "CC-BY-4.0",
+    "source": "https://sketchfab.com/3d-models/fps-pistol-animations-0d7a343dcb6f401197a73c91aee93f6d",
+    "mirror": "https://github.com/xssl9/ZERO_FRAME/tree/main/assets/weapons/pistol",
+    "modifications": "Original glTF/binary/textures packed into GLB; textures resized to1024 and JPEG encoded; runtime pose and clip timing adjusted.",
+    "sha256": "1b22ccfb41840a03197778f13fc6cadb311570568146460a3c43cff2ed545a28",
+    "bytes": 3729460
+  }
+]

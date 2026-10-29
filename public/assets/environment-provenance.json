@@ -1,0 +1,468 @@
+{
+  "retrieved": "2026-10-29",
+  "assets": [
+    {
+      "files": [
+        "textures/plaster-color.jpg",
+        "textures/plaster-normal.jpg",
+        "textures/plaster-roughness.jpg"
+      ],
+      "title": "Plaster003",
+      "author": "ambientCG / Lennart Demes",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://ambientcg.com/view?id=Plaster003",
+      "download": "https://ambientcg.com/get?file=Plaster003_1K-JPG.zip",
+      "modifications": "Selected Color, NormalGL and Roughness maps from the official 1K-JPG release; re-encoded at JPEG quality 78, 1024 pixels. No displacement or metallic map shipped.",
+      "integrity": {
+        "textures/plaster-color.jpg": {
+          "bytes": 528120,
+          "sha256": "b0aaf095a386e26ce62bca1c9a4cee54c5d8fd04690db0c06c449b11a356949a"
+        },
+        "textures/plaster-normal.jpg": {
+          "bytes": 948877,
+          "sha256": "4be7197e023e854bd1edc4f360b026f4d07c4d26e35f6c395aae10c931787b79"
+        },
+        "textures/plaster-roughness.jpg": {
+          "bytes": 85783,
+          "sha256": "3d4363b2e6b114c99d8e9dbdadee29cf322bf1aa722a325fb3eec0a6a0d51d6a"
+        }
+      }
+    },
+    {
+      "files": [
+        "textures/tiles-color.jpg",
+        "textures/tiles-normal.jpg",
+        "textures/tiles-roughness.jpg"
+      ],
+      "title": "Tiles074",
+      "author": "ambientCG / Lennart Demes",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://ambientcg.com/view?id=Tiles074",
+      "download": "https://ambientcg.com/get?file=Tiles074_1K-JPG.zip",
+      "modifications": "Selected Color, NormalGL and Roughness maps from the official 1K-JPG release; re-encoded at JPEG quality 78, 1024 pixels. No displacement or metallic map shipped.",
+      "integrity": {
+        "textures/tiles-color.jpg": {
+          "bytes": 330465,
+          "sha256": "98daa3e0586fc48370de7ebaba7f27d72bf0ac3b7f90cfc03eb326ddc0e4f73f"
+        },
+        "textures/tiles-normal.jpg": {
+          "bytes": 44313,
+          "sha256": "72b7ffc54a430582f35cde43bccb62a272fbfe891c29c728fe802cf2e3836619"
+        },
+        "textures/tiles-roughness.jpg": {
+          "bytes": 165757,
+          "sha256": "e880277ee2132634d199dc8094cf5e78393e72ef26162f28eb8925db5a3decff"
+        }
+      }
+    },
+    {
+      "files": [
+        "textures/metal-color.jpg",
+        "textures/metal-normal.jpg",
+        "textures/metal-roughness.jpg"
+      ],
+      "title": "Metal023",
+      "author": "ambientCG / Lennart Demes",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://ambientcg.com/view?id=Metal023",
+      "download": "https://ambientcg.com/get?file=Metal023_1K-JPG.zip",
+      "modifications": "Selected Color, NormalGL and Roughness maps from the official 1K-JPG release; re-encoded at JPEG quality 78, 1024 pixels. No displacement or metallic map shipped.",
+      "integrity": {
+        "textures/metal-color.jpg": {
+          "bytes": 550209,
+          "sha256": "9d7e5dcca17e1aa8a7d1802b61b52d9f953312a3ffa50c97a3f037faab6b47e0"
+        },
+        "textures/metal-normal.jpg": {
+          "bytes": 357646,
+          "sha256": "02cc6c2c1a2e55e6a3125d34c814412fbf7be8a3a76ef6cfb549554288ee3b72"
+        },
+        "textures/metal-roughness.jpg": {
+          "bytes": 426773,
+          "sha256": "83e9d73edf1c302c19be1789c4b7a6b5b928567f9ef7520d9279caef76816026"
+        }
+      }
+    },
+    {
+      "files": [
+        "audio/rifle.wav",
+        "audio/pistol.wav"
+      ],
+      "title": "The Free Firearm Sound Library",
+      "author": "Ben Jaszczak, Brian Nelson, Kevin Heras, Matthew Nanney",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://opengameart.org/content/the-free-firearm-sound-library",
+      "download": "https://opengameart.org/sites/default/files/Prepared%20SFX%20Library.7z",
+      "modifications": "Individual shots trimmed from AR-15/D_24P.wav at 0.541s for 1.25s and Walther PPQ/X_31P.wav at 1.078s for 1.35s; major transients follow within 8.3ms/7.4ms respectively. Downmixed to mono 22050Hz PCM16 WAV.",
+      "original_files": {
+        "mirror_repository": "https://github.com/petroulacl/fps-asset-kit",
+        "mirror_files": [
+          "https://raw.githubusercontent.com/petroulacl/fps-asset-kit/main/sfx/firearm_sfx/Prepared%20SFX%20Library/AR-15/D_24P.wav",
+          "https://raw.githubusercontent.com/petroulacl/fps-asset-kit/main/sfx/firearm_sfx/Prepared%20SFX%20Library/Walther%20PPQ/X_31P.wav"
+        ]
+      },
+      "integrity": {
+        "audio/rifle.wav": {
+          "bytes": 55348,
+          "sha256": "feed474579b39a1b9927cd9d0dcd3d997c4e07b30a098e3497c952466d7e810b"
+        },
+        "audio/pistol.wav": {
+          "bytes": 59746,
+          "sha256": "f8d129da9bfc2bc10ee9dca1d5c233805982d69609a60aaa0485fbe8c22d3d1b"
+        }
+      }
+    },
+    {
+      "files": [
+        "audio/reload.wav"
+      ],
+      "title": "Gun Reload Sound Effects",
+      "author": "Brian MacIntosh / BMacZero",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://opengameart.org/content/gun-reload-sound-effects",
+      "download": "https://opengameart.org/sites/default/files/clipload1.wav",
+      "modifications": "Renamed clipload1.wav; unmodified PCM recording.",
+      "integrity": {
+        "audio/reload.wav": {
+          "bytes": 22572,
+          "sha256": "1cdc10c50a26834ce7562a5f2925b9aa1118e3bb58a86fea80f34558bf2c5101"
+        }
+      }
+    },
+    {
+      "files": [
+        "audio/step1.wav",
+        "audio/step2.wav",
+        "audio/step3.wav",
+        "audio/step4.wav"
+      ],
+      "title": "Fantozzi's Footsteps (Grass/Sand & Stone)",
+      "author": "Fantozzi; sliced/submitted by qubodup",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://opengameart.org/content/fantozzis-footsteps-grasssand-stone",
+      "download": "https://opengameart.org/sites/default/files/Fantozzi-footsteps.7z",
+      "modifications": "StoneL1, StoneR1, StoneL2, StoneR2 converted from original Ogg to mono 22050Hz PCM16 WAV.",
+      "original_files": {
+        "mirror_repository": "https://github.com/petroulacl/fps-asset-kit",
+        "mirror_directory": "sfx/footsteps/Fantozzi-footsteps/ogg"
+      },
+      "integrity": {
+        "audio/step1.wav": {
+          "bytes": 16524,
+          "sha256": "5e879178e364079d34459b95d6ac6b3af50ee0cd284c34d8ab730e351387a832"
+        },
+        "audio/step2.wav": {
+          "bytes": 15808,
+          "sha256": "00628289b922b7420c1ea8fa87118095b8f39323974d1ac04af5a6050f3c72aa"
+        },
+        "audio/step3.wav": {
+          "bytes": 14704,
+          "sha256": "095be6a39020292d34e769a0366a51e78a8a8bedcfbe746dd23d922ff401f4bc"
+        },
+        "audio/step4.wav": {
+          "bytes": 14178,
+          "sha256": "8c4f1bd3484f5d0e68cca5ef01979b3583412513f0df7060b72f997fc22810c1"
+        }
+      }
+    },
+    {
+      "files": [
+        "audio/zombie1.wav",
+        "audio/zombie2.wav",
+        "audio/zombie3.wav",
+        "audio/zombie4.wav"
+      ],
+      "title": "Zombies Sound Pack",
+      "author": "artisticdude",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://opengameart.org/content/zombies-sound-pack",
+      "download": "https://opengameart.org/sites/default/files/zombies.zip",
+      "modifications": "Selected zombie-1.wav, zombie-5.wav, zombie-10.wav, zombie-15.wav; converted to mono 22050Hz PCM16 WAV. Samples are vocal zombie reactions suitable for varied positional groans.",
+      "integrity": {
+        "audio/zombie1.wav": {
+          "bytes": 37790,
+          "sha256": "5d596c9d0764e9134f57a1639a50eaf6e630cda7ccdd15356ae53a522a2aa282"
+        },
+        "audio/zombie2.wav": {
+          "bytes": 22170,
+          "sha256": "190e6d868fe6e02663f5915e1761d7232cfe55712e22b5cbf902dd45b58b33ca"
+        },
+        "audio/zombie3.wav": {
+          "bytes": 30440,
+          "sha256": "f8ab959ee593323494b56346714978e906f15e289f0c0bce7fe476abc89033c8"
+        },
+        "audio/zombie4.wav": {
+          "bytes": 38708,
+          "sha256": "edbeee0564c49bc7273d453017a8bc56cc6cd58b2859c06a6b573066b1f426de"
+        }
+      }
+    },
+    {
+      "files": [
+        "audio/knife.wav",
+        "audio/impact.wav",
+        "audio/equip.wav"
+      ],
+      "title": "RPG Sound Pack",
+      "author": "artisticdude",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://opengameart.org/content/rpg-sound-pack",
+      "download": "https://opengameart.org/sites/default/files/rpg_sound_pack.zip",
+      "modifications": "Selected battle/swing2.wav (knife swing), NPC/beetle/bite-small.wav (body impact), inventory/metal-small1.wav (equipment); converted to mono 22050Hz PCM16 WAV.",
+      "integrity": {
+        "audio/knife.wav": {
+          "bytes": 6552,
+          "sha256": "b2b7771f64011b910b6081ab58222aab6d7ed06fac7b5c630e7d6e569859b31a"
+        },
+        "audio/impact.wav": {
+          "bytes": 16984,
+          "sha256": "bfd0a993f2c01bacbda84ab9acd20afb092fb8345c7e5461a01bddab1b728d96"
+        },
+        "audio/equip.wav": {
+          "bytes": 23388,
+          "sha256": "dc1cd30b64f169b5036b37461f4f01d6645f627eb0382b70c99b93b1dd2edb1a"
+        }
+      }
+    },
+    {
+      "files": [
+        "audio/ambient.wav"
+      ],
+      "title": "Electronic device loop",
+      "author": "qubodup",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://opengameart.org/content/electronic-device-loop",
+      "download": "https://opengameart.org/sites/default/files/qubodup-edev.flac",
+      "modifications": "Real hard-disk/mechanical recording, low-pass filtered at 650Hz for subdued indoor machine ambience; brief edge fades; downmixed to mono 22050Hz PCM16 WAV. Not a hospital field recording.",
+      "integrity": {
+        "audio/ambient.wav": {
+          "bytes": 76610,
+          "sha256": "94343999a35945d6789f351d09b84496b62a5324fac04d331d0ea505f2eb00da"
+        }
+      }
+    },
+    {
+      "files": [
+        "textures/leak.png"
+      ],
+      "title": "Leaking003",
+      "author": "ambientCG / Lennart Demes",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://ambientcg.com/view?id=Leaking003",
+      "download": "https://ambientcg.com/get?file=Leaking003_1K-PNG.zip",
+      "modifications": "Packed original 1024x512 Color RGB and Opacity grayscale into one lossless RGBA PNG. Original aspect and full 0\u2013255 alpha retained. No other edits.",
+      "integrity": {
+        "textures/leak.png": {
+          "bytes": 977462,
+          "sha256": "cc9160f7aaacceab1d6ab7b2ecfe50388bbb22c50eac84cc09796ccaefa93aa5"
+        }
+      }
+    }
+  ],
+  "audio_metadata": {
+    "ambient.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "1.735420"
+      }
+    },
+    "equip.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.527619"
+      }
+    },
+    "impact.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.383356"
+      }
+    },
+    "knife.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.145850"
+      }
+    },
+    "pistol.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "1.350023"
+      }
+    },
+    "reload.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "44100",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.255420"
+      }
+    },
+    "rifle.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "1.250023"
+      }
+    },
+    "step1.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.372925"
+      }
+    },
+    "step2.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.356689"
+      }
+    },
+    "step3.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.331655"
+      }
+    },
+    "step4.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.319728"
+      }
+    },
+    "zombie1.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.854195"
+      }
+    },
+    "zombie2.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.500000"
+      }
+    },
+    "zombie3.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.687528"
+      }
+    },
+    "zombie4.wav": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "sample_rate": "22050",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "0.875011"
+      }
+    }
+  }
+}
