@@ -11,13 +11,14 @@
   "samples": 18000,
   "sampledSeconds": 300,
   "averageFpsRounded": 60,
-  "p95FrameMs": 18.1,
+  "p95FrameMs": 18.3,
   "framesOver50Ms": 0,
   "warmupExcludedSeconds": 10,
   "scenario": "Stationary maximum horde; normal navigation, separation, animation and attacks; player invulnerable to sustain run",
   "referenceIrisXeVerified": false,
   "edgeVerified": false,
   "firefoxVerified": false,
-  "browserIntegrationChecksPassed": 19,
-  "unitTestsPassed": 5
+  "browserIntegrationChecksPassed": 32,
+  "unitTestsPassed": 14,
+  "revision": "Local trader and arsenal revision, measured before folder-only refactor and final view framing/material polish"
 }

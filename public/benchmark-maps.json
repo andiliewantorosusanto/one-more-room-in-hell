@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-29",
+  "revision": "One More Room In Hell \u2014 maps, objective mode and flying infected",
+  "host": "Apple M4, 16 GB RAM",
+  "browser": "Codex in-app browser / WebGL2",
+  "quality": "Balanced",
+  "map": "Hospital Isolation",
+  "resolution": [
+    1280,
+    720
+  ],
+  "activeZombies": 32,
+  "activeFlyers": 4,
+  "samples": 6896,
+  "sampledSeconds": 115,
+  "durationRounded": true,
+  "averageFpsRounded": 60,
+  "p95FrameMs": 18.1,
+  "framesOver50Ms": 0,
+  "warmupExcludedSeconds": 10,
+  "scenario": "Stationary mixed horde; normal navigation, flight, separation, animation and attacks; invulnerable player sustains run",
+  "fiveMinuteCurrentRevisionVerified": false,
+  "referenceIrisXeVerified": false,
+  "edgeVerified": false,
+  "firefoxVerified": false,
+  "browserIntegrationChecksPassed": 72,
+  "unitTestsPassed": 19
+}

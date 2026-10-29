@@ -304,3 +304,19 @@ Babylon.js: Apache License2.0, https://github.com/BabylonJS/Babylon.js.
 Vite: MIT. TypeScript: Apache2.0. Sharp is a development-only asset preparation tool and is not a browser dependency.
 
 Babylon.js license and notice are bundled under /licenses/.
+
+
+## Local arsenal additions — 29 October 2026
+
+Kite-9, Kite-45, Warden Pump, Warden 1887, Warden AX and Helix Plasma: original geometry created locally for WARD ZERO in `src/weapons/weapon-art.ts`. No additional models, recordings or textures were downloaded for this revision. They reuse the existing CC BY 4.0 rifle arm rig and clips credited above. Imported firearm meshes are hidden for these six variants. Static parts are merged by material; bolts, detachable magazines/cell, pump, lever, loading shell and cooling vanes are articulated separately. The lever shotgun performs a full turn around its loop contact between shots.
+
+Presentation modifications: pistol camera framing and reload/aim blending adjusted; knife idle pose evaluated explicitly and raised into view. Existing firearm recordings are pitch-varied for the added ballistic weapons. Plasma sound is synthesized locally with Web Audio; beams use bounded original geometry. Added models currently use local material colors rather than individually authored texture maps, and share donor hand motions rather than bespoke weapon-specific hand animation.
+
+Babylon's Meshopt decoder is bundled from the installed package to avoid runtime CDN requests.
+
+
+## Maps, rebrand and flying infected — 29 October 2026
+
+Game renamed from WARD ZERO to One More Room In Hell. Original source credits above remain unchanged. Freight Depot layout, cargo props, terminal beacon, door favicon and map-selection graphics were authored locally, reusing the existing credited CC0 surface textures.
+
+Flying Shrieker: derived from the existing Rosswet Mobile / Morgan Nriu zombie body and clips credited above, with a smaller scale, altitude-driven movement, original torn membrane/tendon wings, procedural flapping, an original noise-and-vein membrane texture, and a descent before close attacks. No new character model or mocap was downloaded. Wing membranes and tendons are original geometry in `src/enemies/flyer-art.ts`; flight behavior and elevated hitboxes are in `src/enemies/enemies.ts`. Existing vocal recordings are pitch-varied for its screech.
