@@ -2,8 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { weaponSway } from '../src/weapons/weapon-rules.ts';
 import { infectedApproach } from '../src/enemies/enemy-rules.ts';
-import { MAPS } from '../src/maps/maps.ts';
-import { WorldGrid, COLS, ROWS } from '../src/world/navigation.ts';
 
 test('ADS reduces idle sway by 85%, motion reduction disables it', () => {
     const hip = weaponSway(1, 0, false, false), aim = weaponSway(1, 1, false, false);
@@ -11,17 +9,6 @@ test('ADS reduces idle sway by 85%, motion reduction disables it', () => {
     assert.ok(Math.abs(aim.yaw / hip.yaw - .15) < 1e-10);
     assert.ok(Math.abs(aim.pitch / hip.pitch - .15) < 1e-10);
     assert.deepEqual(weaponSway(1, 0, true, true), { yaw: 0, pitch: 0 });
-});
-
-test('expanded maps connect four sectors and spread objectives beyond the original wing', () => {
-    for (const map of MAPS) {
-        const grid = new WorldGrid(map);
-        assert.ok(grid.cells.filter(Boolean).length > 1400);
-        grid.rebuild(grid.center(...map.spawn));
-        assert.ok(grid.distances[41 * COLS + 49] > 30);
-        assert.ok(map.objectives.some(goal => goal.cell[0] > 26 && goal.cell[1] > 22));
-        assert.ok(map.entrances.every(([x, z]) => x < COLS && z < ROWS));
-    }
 });
 
 test('infected split to both flanks, vary pace, and commit to close attacks', () => {

@@ -17,7 +17,7 @@ def main():
     weapons = {'pistol': 'v_pistola', 'knife': 'v_knife_t', 'rifle': 'v_rifle', 'smg': 'v_smg', 'heavySmg': 'v_silenced_smg', 'shotgun': 'v_pumpshotgun', 'leverShotgun': 'v_shotgun_chrome', 'autoShotgun': 'v_shotgun_spas', 'plasmaRifle': 'v_rifle_ak47'}
     assets = [(name, f'models/infected/{model}.mdl', 'infected') for name, model in infected.items()]
     assets += [(name, f'models/v_models/{model}.mdl', 'weapon') for name, model in weapons.items()]
-    assets += [('bill', 'models/survivors/survivor_namvet.mdl', 'survivor'), ('hospital', 'left4dead2_dlc2/maps/c8m4_interior.bsp', 'map')]
+    assets += [('hospital', 'left4dead2_dlc2/maps/c8m4_interior.bsp', 'map')]
     for name, asset, role in assets:
         subprocess.run([str(pathlib.Path(args.blender).resolve()), '-b', '--factory-startup', '--python-exit-code', '1', '--python', str(root / 'scripts/import-l4d2.py'), '--', '--game', args.game, '--sourceio', str(pathlib.Path(args.sourceio).resolve()), '--asset', asset, '--role', role, '--output', str(output / (name + '.glb'))], cwd=root, check=True)
     subprocess.run([sys.executable, str(root / 'scripts/export-hospital-nav.py'), str(pathlib.Path(args.game) / 'update/maps/c8m4_interior.nav'), str(output / 'hospital-nav.json')], cwd=root, check=True)

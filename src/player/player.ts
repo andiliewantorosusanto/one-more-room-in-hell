@@ -11,7 +11,7 @@ export class Player {
     distance = 0;
     camera: UniversalCamera;
     constructor(public grid: WorldGrid, scene: Scene) {
-        this.position = grid.center(...grid.map.spawn);
+        this.position = grid.center(grid.map.spawn);
         this.previous = {
             ...this.position
         };
@@ -22,7 +22,7 @@ export class Player {
         this.camera.inputs.clear();
     }
     reset() {
-        this.position = this.grid.center(...this.grid.map.spawn);
+        this.position = this.grid.center(this.grid.map.spawn);
         this.previous = {
             ...this.position
         };

@@ -20,37 +20,36 @@ export type WeaponSpec = {
     reserveMax: number;
     ammoPrice: number;
     requires?: WeaponId;
-    view: 'pistol' | 'knife' | 'rifle' | 'authored';
-    reloadStyle: 'magazine' | 'shell' | 'cell' | 'none';
+    reloadStyle: 'magazine' | 'shell' | 'none';
     ammoLabel: string;
 };
 export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     pistol: {
-        name: 'XD COMPACT', label: 'SIDEARM', description: 'Your dependable starting sidearm. Unlimited reserve; reload the magazine.', category: 'Sidearm', capacity: 12, damage: 25, reload: 1.5, interval: .24, automatic: false, pellets: 1, spread: .008, price: 0, reserveMax: Infinity, ammoPrice: 0, view: 'pistol', reloadStyle: 'magazine', ammoLabel: 'UNLIMITED RESERVE'
+        name: 'P220', label: 'SIDEARM', description: 'Dependable sidearm with unlimited reserve ammunition.', category: 'Sidearm', capacity: 12, damage: 25, reload: 1.5, interval: .24, automatic: false, pellets: 1, spread: .008, price: 0, reserveMax: Infinity, ammoPrice: 0, reloadStyle: 'magazine', ammoLabel: '9 mm SIDEARM'
     },
     knife: {
-        name: 'COMBAT KNIFE', label: 'MELEE', description: 'No ammunition. Two close-range slashes stop a regular infected.', category: 'Melee', capacity: 0, damage: 50, reload: 0, interval: .65, automatic: false, pellets: 1, spread: 0, price: 0, reserveMax: 0, ammoPrice: 0, view: 'knife', reloadStyle: 'none', ammoLabel: '1.5 m REACH'
+        name: 'COMBAT KNIFE', label: 'MELEE', description: 'Two close-range slashes stop a regular infected.', category: 'Melee', capacity: 0, damage: 50, reload: 0, interval: .65, automatic: false, pellets: 1, spread: 0, price: 0, reserveMax: 0, ammoPrice: 0, reloadStyle: 'none', ammoLabel: '1.5 m REACH'
     },
     smg: {
-        name: 'KITE-9', label: 'COMPACT SMG', description: 'Light damage, very fast automatic fire. Keep bursts short.', category: 'SMG', capacity: 32, damage: 18, reload: 2.1, interval: .075, automatic: true, pellets: 1, spread: .017, price: 450, reserveMax: 160, ammoPrice: 90, view: 'authored', reloadStyle: 'magazine', ammoLabel: '9 × 19 mm'
+        name: 'UZI', label: 'COMPACT SMG', description: 'Fast automatic fire. Keep bursts short.', category: 'SMG', capacity: 32, damage: 18, reload: 2.1, interval: .075, automatic: true, pellets: 1, spread: .017, price: 450, reserveMax: 160, ammoPrice: 90, reloadStyle: 'magazine', ammoLabel: '9 × 19 mm'
     },
     heavySmg: {
-        name: 'KITE-45', label: 'HEAVY SMG', description: 'Upgrade the KITE platform for harder hits and a slower, controllable cadence.', category: 'SMG', capacity: 25, damage: 27, reload: 2.25, interval: .09, automatic: true, pellets: 1, spread: .013, price: 800, reserveMax: 150, ammoPrice: 110, requires: 'smg', view: 'authored', reloadStyle: 'magazine', ammoLabel: '.45 ACP'
+        name: 'MAC-10', label: 'HEAVY SMG', description: 'Suppressed automatic upgrade with harder hits.', category: 'SMG', capacity: 25, damage: 27, reload: 2.25, interval: .09, automatic: true, pellets: 1, spread: .013, price: 800, reserveMax: 150, ammoPrice: 110, requires: 'smg', reloadStyle: 'magazine', ammoLabel: '.45 ACP · SUPPRESSED'
     },
     rifle: {
-        name: 'AK-74M', label: 'ASSAULT RIFLE', description: 'Reliable mid-range stopping power. Three body hits or two head hits.', category: 'Rifle', capacity: 30, damage: 34, reload: 2.5, interval: .105, automatic: true, pellets: 1, spread: .009, price: 650, reserveMax: 180, ammoPrice: 100, view: 'rifle', reloadStyle: 'magazine', ammoLabel: '5.45 × 39 mm'
+        name: 'M16A2', label: 'ASSAULT RIFLE', description: 'Reliable mid-range stopping power.', category: 'Rifle', capacity: 30, damage: 34, reload: 2.5, interval: .105, automatic: true, pellets: 1, spread: .009, price: 650, reserveMax: 180, ammoPrice: 100, reloadStyle: 'magazine', ammoLabel: '5.56 × 45 mm'
     },
     shotgun: {
-        name: 'WARDEN PUMP', label: 'LIGHT SHOTGUN', description: 'An affordable, weaker shotgun. Wide spread; load shells one at a time.', category: 'Shotgun', capacity: 6, damage: 10, reload: .62, interval: .9, automatic: false, pellets: 8, spread: .085, price: 350, reserveMax: 36, ammoPrice: 100, view: 'authored', reloadStyle: 'shell', ammoLabel: '12 GA · PUMP ACTION'
+        name: 'REMINGTON 870', label: 'LIGHT SHOTGUN', description: 'Pump-action shotgun; load shells one at a time.', category: 'Shotgun', capacity: 6, damage: 10, reload: .62, interval: .9, automatic: false, pellets: 8, spread: .085, price: 350, reserveMax: 36, ammoPrice: 100, reloadStyle: 'shell', ammoLabel: '12 GA · PUMP ACTION'
     },
     leverShotgun: {
-        name: 'WARDEN 1887', label: 'LEVER SHOTGUN', description: 'Heavy close-range damage with a spinning lever cycle between shots.', category: 'Shotgun', capacity: 5, damage: 18, reload: .7, interval: 1.05, automatic: false, pellets: 8, spread: .065, price: 800, reserveMax: 30, ammoPrice: 130, requires: 'shotgun', view: 'authored', reloadStyle: 'shell', ammoLabel: '12 GA · LEVER ACTION'
+        name: 'CHROME SHOTGUN', label: 'CHROME SHOTGUN', description: 'Heavy close-range damage with individual shell loading.', category: 'Shotgun', capacity: 5, damage: 18, reload: .7, interval: 1.05, automatic: false, pellets: 8, spread: .065, price: 800, reserveMax: 30, ammoPrice: 130, requires: 'shotgun', reloadStyle: 'shell', ammoLabel: '12 GA · PUMP ACTION'
     },
     autoShotgun: {
-        name: 'WARDEN AX', label: 'ADVANCED SHOTGUN', description: 'A drum-fed automatic upgrade. High damage and quick follow-up shots.', category: 'Shotgun', capacity: 10, damage: 15, reload: 2.8, interval: .38, automatic: true, pellets: 10, spread: .055, price: 1400, reserveMax: 50, ammoPrice: 180, requires: 'shotgun', view: 'authored', reloadStyle: 'magazine', ammoLabel: '12 GA · DRUM FED'
+        name: 'SPAS-12', label: 'COMBAT SHOTGUN', description: 'Semi-automatic shotgun; load shells one at a time.', category: 'Shotgun', capacity: 10, damage: 15, reload: .65, interval: .38, automatic: true, pellets: 10, spread: .055, price: 1400, reserveMax: 50, ammoPrice: 180, requires: 'shotgun', reloadStyle: 'shell', ammoLabel: '12 GA · SEMI-AUTO'
     },
     plasmaRifle: {
-        name: 'HELIX PLASMA', label: 'PLASMA RIFLE', description: 'Upgrade your rifle into a high-damage energy weapon. One head hit stops an infected.', category: 'Energy', capacity: 24, damage: 60, reload: 2.7, interval: .16, automatic: true, pellets: 1, spread: .006, price: 1600, reserveMax: 96, ammoPrice: 160, requires: 'rifle', view: 'authored', reloadStyle: 'cell', ammoLabel: 'IONIZED ENERGY CELLS'
+        name: 'AK-47', label: 'HEAVY RIFLE', description: 'High-damage automatic rifle upgrade.', category: 'Rifle', capacity: 30, damage: 60, reload: 2.5, interval: .16, automatic: true, pellets: 1, spread: .006, price: 1600, reserveMax: 96, ammoPrice: 160, requires: 'rifle', reloadStyle: 'magazine', ammoLabel: '7.62 × 39 mm'
     },
 };
 export const SHOP_WEAPONS: WeaponId[] = ['shotgun', 'smg', 'rifle', 'heavySmg', 'leverShotgun', 'autoShotgun', 'plasmaRifle'];

@@ -19,10 +19,14 @@ export class GameAudio {
     }
     async load(progress: () => void) {
         await Promise.all(FILES.map(async (name) => {
-            const r = await fetch(`/assets/audio/${name}.wav`);
-            if (!r.ok)
-                throw new Error(`Missing audio: ${name}`);
-            this.buffers.set(name, await this.context.decodeAudioData(await r.arrayBuffer()));
+            const url = `/assets/audio/${name}.wav`;
+            try {
+                const r = await fetch(url);
+                if (!r.ok) throw new Error('Missing audio');
+                this.buffers.set(name, await this.context.decodeAudioData(await r.arrayBuffer()));
+            } catch {
+                throw new Error(`Cannot load audio: ${url}`);
+            }
             progress();
         }));
     }
@@ -77,25 +81,5 @@ export class GameAudio {
     suspend() {
         if (this.context.state === 'running')
             void this.context.suspend();
-    }
-    plasma() {
-        if (this.context.state !== 'running' || this.voices >= 28)
-            return;
-        const osc = this.context.createOscillator(), gain = this.context.createGain(), now = this.context.currentTime;
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(950, now);
-        osc.frequency.exponentialRampToValueAtTime(95, now + .13);
-        gain.gain.setValueAtTime(.15, now);
-        gain.gain.exponentialRampToValueAtTime(.001, now + .16);
-        osc.connect(gain);
-        gain.connect(this.master);
-        this.voices++;
-        osc.onended = () => {
-            this.voices--;
-            osc.disconnect();
-            gain.disconnect();
-        };
-        osc.start();
-        osc.stop(now + .17);
     }
 }

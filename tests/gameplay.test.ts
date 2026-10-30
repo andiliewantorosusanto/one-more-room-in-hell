@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RunRules, WAVES, CAPS, headshotStreakBonus } from '../src/game/run-rules.ts';
 import { WeaponRules, WEAPONS, type WeaponId } from '../src/weapons/weapon-rules.ts';
-import { WorldGrid, COLS, ROWS, raySphere } from '../src/world/navigation.ts';
 function trader(points = 10000) {
     const run = new RunRules();
     run.start();
@@ -83,7 +82,7 @@ test('shop enforces phase, funds, ownership and upgrade prerequisites', () => {
     assert.equal(r.points, 100);
     r.points = 2000;
     assert.ok(!w.buy('plasmaRifle', r));
-    assert.match(w.purchaseReason('plasmaRifle', r), /AK-74M/);
+    assert.match(w.purchaseReason('plasmaRifle', r), /M16A2/);
     assert.ok(w.buy('rifle', r));
     assert.equal(r.points, 1350);
     assert.equal(w.magazines.rifle, 30);
@@ -203,23 +202,23 @@ test('a loaded shell can interrupt a tube reload to fire; empty reload cannot', 
     assert.equal(w.ammo, 0);
     assert.ok(!w.reloading);
 });
-test('knife, automatic SMGs and plasma retain their own cadence and reserves', () => {
+test('knife, automatic SMGs and AK-47 retain their own cadence and reserves', () => {
     const w = equip('smg');
     assert.ok(w.fire());
     assert.ok(!w.fire());
     w.tick(.075);
     assert.ok(w.fire());
     assert.equal(w.ammo, 30);
-    const plasma = equip('plasmaRifle');
-    assert.equal(plasma.ammo, 24);
-    assert.equal(plasma.reserve, 96);
-    assert.ok(plasma.fire());
-    assert.equal(plasma.ammo, 23);
-    plasma.tick(.2);
-    plasma.reload();
-    plasma.tick(2.7);
-    assert.equal(plasma.ammo, 24);
-    assert.equal(plasma.reserve, 95);
+    const rifle = equip('plasmaRifle');
+    assert.equal(rifle.ammo, 30);
+    assert.equal(rifle.reserve, 96);
+    assert.ok(rifle.fire());
+    assert.equal(rifle.ammo, 29);
+    rifle.tick(.2);
+    rifle.reload();
+    rifle.tick(2.7);
+    assert.equal(rifle.ammo, 30);
+    assert.equal(rifle.reserve, 95);
     w.switchTo('knife');
     w.tick(.3);
     assert.ok(w.fire());
@@ -269,24 +268,4 @@ test('death prevents damage, shop readiness and further wave spawns', () => {
     assert.ok(!r.startNextWave());
     r.tick(100);
     assert.equal(r.wave, 1);
-});
-test('hospital navigation stays connected; walls obstruct shots and movement', () => {
-    const g = new WorldGrid(), target = g.center(13, 11);
-    g.rebuild(target);
-    for (let z = 0; z < ROWS; z++)
-        for (let x = 0; x < COLS; x++)
-            if (g.walkable(x, z))
-                assert.ok(g.distances[z * COLS + x] >= 0, `Disconnected ${x},${z}`);
-    const p = g.center(4, 6), wall = g.center(5, 6);
-    assert.ok(!g.lineClear(p, wall));
-    const before = {
-        ...p
-    };
-    g.move(p, 1.3, 0);
-    assert.deepEqual(p, before);
-    assert.ok(g.wallDistance(before, {
-        x: 1, z: 0
-    }) < 1);
-    assert.equal(raySphere(0, 1, 0, 0, 0, 1, 0, 1, 5, .5), 4.5);
-    assert.equal(raySphere(0, 1, 0, 0, 0, 1, 2, 1, 5, .5), Infinity);
 });

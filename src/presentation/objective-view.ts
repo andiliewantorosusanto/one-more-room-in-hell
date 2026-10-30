@@ -61,7 +61,7 @@ export class ObjectiveView {
         const key = grid.map.id + run.wave;
         if (key !== this.stage) {
             this.stage = key;
-            const p = grid.center(...goal.cell);
+            const p = grid.center(goal.area);
             this.root.position.set(p.x, p.y ?? 0, p.z);
             const c = this.label.getContext();
             c.fillStyle = '#101814';

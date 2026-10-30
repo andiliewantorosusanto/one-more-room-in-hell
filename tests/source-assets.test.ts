@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 
 const root = new URL('../public/source-private/l4d2/', import.meta.url);
-test('local Valve pack contains textured native rigs and the complete hospital NAV', { skip: !existsSync(new URL('manifest.json', root)) }, () => {
+test('local Valve pack contains textured native rigs and the complete hospital NAV', { skip: !existsSync(new URL('manifest.json', root)) && 'Native asset pack missing: restore public/source-private/l4d2/' }, () => {
     const manifest = JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8').replace(/^\uFEFF/, ''));
     for (const name of [...manifest.infected, ...Object.values(manifest.weapons)]) {
         const bytes = readFileSync(new URL(name + '.glb', root));

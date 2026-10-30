@@ -26,9 +26,8 @@ export function setupQA(game: GameInstance) {
         game.run.spawned = 1;
         game.run.alive = 1;
         const p = game.player.position;
-        const point = {
-            x: p.x + Math.sin(game.player.yaw) * distance, z: p.z + Math.cos(game.player.yaw) * distance, y: p.y
-        };
+        const point = game.grid.areas.map((_, i) => game.grid.center(i)).filter(point => Math.abs((point.y ?? 0) - (p.y ?? 0)) < .4 && game.grid.clear(point.x, point.z, .3, point.y) && game.grid.lineClear(p, point)).sort((a, b) => Math.abs(Math.hypot(a.x - p.x, a.z - p.z) - distance) - Math.abs(Math.hypot(b.x - p.x, b.z - p.z) - distance))[0];
+        if (!point) throw new Error('No clear hospital target area');
         game.enemies.spawn(point, false);
         game.enemies.zombies.find(z => z.life === 'alive')!.debugFrozen = true;
         game.player.pitch = 0;
@@ -77,16 +76,15 @@ export function setupQA(game: GameInstance) {
         const model = game.view.models.get(game.weapons.current)!;
         const nodes = model.pivot.getChildTransformNodes().filter(n => /Camera|weapon_bone|attach_muzzle|Head1/.test(n.name));
         panel.querySelector('#qa-results')!.textContent = JSON.stringify({
-            position: game.player.position, nativeAreas: game.grid.source?.areas.length,
+            position: game.player.position, nativeAreas: game.grid.areas.length,
             bones: nodes.map(n => ({ name: n.name, local: Vector3.TransformCoordinates(n.getAbsolutePosition(), Matrix.Invert(model.pivot.getWorldMatrix())).asArray() })),
             groups: model.groups.map(g => ({ name: g.name, from: g.from, to: g.to })),
             bounds: model.pivot.getHierarchyBoundingVectors(),
         }, null, 1);
     });
     add('Hospital corridor', () => {
-        if (!game.grid.source) return;
         start(); game.enemies.reset();
-        game.player.position = game.grid.source.center(game.grid.source.closest({ x: 2, z: 12, y: 0 }));
+        game.player.position = game.grid.center(game.grid.closest({ x: 2, z: 12, y: 0 }));
         game.player.previous = { ...game.player.position };
         game.player.yaw = 0; game.player.pitch = 0;
     });
@@ -94,8 +92,7 @@ export function setupQA(game: GameInstance) {
         const output = panel.querySelector('#qa-results')!;
         output.textContent = '';
         try {
-            const nav = game.grid.source;
-            if (!nav) throw Error('No local Source map');
+            const nav = game.grid;
             start(); game.enemies.reset();
             const centers = nav.areas.map((_, i) => nav.center(i)).filter(p => (p.y ?? 0) < 1 && nav.clear(p.x, p.z, .3, p.y));
             let pair: typeof centers | undefined;
@@ -126,34 +123,47 @@ export function setupQA(game: GameInstance) {
             const before = { ...game.player.position };
             for (let i = 0; i < 30; i++) game.grid.move(game.player.position, (pair[1].x - before.x) / 120, (pair[1].z - before.z) / 120, .27);
             if (Math.hypot(game.player.position.x - before.x, game.player.position.z - before.z) < .1) throw Error('Hospital movement blocked');
-            output.textContent += 'PASS navigation movement\nALL PORT COMBAT CHECKS PASSED';
+            output.textContent += 'PASS navigation movement\n';
+            pair = undefined;
+            outer: for (const a of centers) for (const b of centers) {
+                const distance = Math.hypot(b.x - a.x, b.z - a.z);
+                if (distance < 4 || distance > 15) continue;
+                const direction = new Vector3((b.x - a.x) / distance, 0, (b.z - a.z) / distance);
+                if (game.grid.wallDistance({ ...a, y: (a.y ?? 0) + 1.5 }, direction, distance) < distance - 1) { pair = [a, b]; break outer; }
+            }
+            if (!pair) throw Error('No blocked hospital firing lane');
+            game.enemies.reset();
+            game.player.position = { ...pair[0] }; game.player.previous = { ...pair[0] };
+            game.enemies.spawn(pair[1], false);
+            const blocked = game.enemies.zombies.find(z => z.life === 'alive')!;
+            blocked.debugFrozen = true;
+            game.enemies.render(1); game.scene.render();
+            const originalSpread = WEAPONS.pistol.spread;
+            try {
+                WEAPONS.pistol.spread = 0;
+                aim(false); game.view.recoil = 0; game.view.sway = { yaw: 0, pitch: 0 };
+                game.weapons.tick(1); game.shoot();
+            } finally { WEAPONS.pistol.spread = originalSpread; }
+            if (blocked.health !== 100 || Number(game.weapons.ammo) !== 9) throw Error('Hospital wall must block a fired round');
+            output.textContent += 'PASS hospital wall blocks shots\nALL PORT COMBAT CHECKS PASSED';
             game.player.previous = { ...game.player.position }; game.player.render(1, .016, false); game.scene.render();
         } catch (error) { output.textContent += 'FAIL ' + String(error); }
     });
     add('Hide checks', () => { panel.style.display = 'none'; });
     add('Target 4m', () => target(4));
     add('Target 1m', () => target(1.05));
-    add('Flying target', () => {
-        target(4);
-        game.enemies.reset();
-        game.run.alive = 1;
-        const p = game.player.position;
-        game.enemies.spawn({
-            x: p.x + Math.sin(game.player.yaw) * 4, z: p.z + Math.cos(game.player.yaw) * 4
-        }, false, 'flyer');
-        game.enemies.zombies.find(z => z.life === 'alive')!.debugFrozen = true;
-    });
     const lineup = () => {
         start();
         game.enemies.reset();
         const p = game.player.position;
         game.player.yaw = Math.PI;
         game.player.pitch = .08;
-        for (let i = 0; i < 3; i++) {
-            game.enemies.spawn({ x: p.x + (i - 1) * 1.1, z: p.z - 3 }, false);
-            const z = game.enemies.zombies[i];
+        const points = game.grid.areas.map((_, i) => game.grid.center(i)).filter(point => Math.abs((point.y ?? 0) - (p.y ?? 0)) < .4 && game.grid.clear(point.x, point.z, .3, point.y) && game.grid.lineClear(p, point) && Math.hypot(point.x - p.x, point.z - p.z) > 2).sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z));
+        for (const point of points.slice(0, 5)) {
+            game.enemies.spawn(point, false);
+            const z = game.enemies.zombies.find(z => z.life === 'alive' && !z.debugFrozen)!;
             z.debugFrozen = true;
-            z.root.rotation.y = 0;
+            z.root.rotation.y = Math.atan2(p.x - point.x, p.z - point.z);
         }
     };
     add('Infected lineup', lineup);
@@ -186,7 +196,7 @@ export function setupQA(game: GameInstance) {
         game.view.equip('pistol');
         output.textContent += 'ALL IRON SIGHT CHECKS PASSED';
         game.view.update(1, game.weapons, false, false, true, 0, true);
-        game.ui.render(game.run, game.weapons, 0, true);
+        game.ui.render(game.run, game.weapons, 0);
         game.scene.render();
         game.paused = true;
         game.scene.animationsEnabled = false;
@@ -199,7 +209,7 @@ export function setupQA(game: GameInstance) {
         game.enemies.reset();
         game.run.spawned = game.run.total;
         game.run.alive = 0;
-        game.player.position = game.grid.center(...goal.cell);
+        game.player.position = game.grid.center(goal.area);
         game.player.previous = {
             ...game.player.position
         };
@@ -225,27 +235,13 @@ export function setupQA(game: GameInstance) {
     add('Resume', () => game.pause(false));
     const stress = () => {
         start();
-        game.run.wave = 5;
-        game.run.spawned = 32;
-        game.run.alive = 32;
-        game.spawnTimer = 99999;
         game.enemies.reset();
-        game.player.position = game.grid.center(13, 11);
-        game.player.previous = {
-            ...game.player.position
-        };
-        game.player.yaw = 0;
-        const points = [];
-        for (let z = 2; z <= 20; z++)
-            for (let x = 2; x <= 24; x++)
-                if (game.grid.walkable(x, z)) {
-                    const p = game.grid.center(x, z);
-                    const d = Math.hypot(p.x - game.player.position.x, p.z - game.player.position.z);
-                    if (d > 2 && d < 10)
-                        points.push(p);
-                }
-        for (let i = 0; i < 32; i++)
-            game.enemies.spawn(points[Math.floor(i * points.length / 32)], i % 4 === 0, i % 8 === 0 ? 'flyer' : i % 4 === 0 ? 'runner' : 'shambler');
+        const player = game.player.position;
+        const points = game.grid.areas.map((_, i) => game.grid.center(i)).filter(p => Math.abs((p.y ?? 0) - (player.y ?? 0)) < 1 && game.grid.clear(p.x, p.z, .3, p.y) && Math.hypot(p.x - player.x, p.z - player.z) > 2);
+        if (!points.length) throw new Error('No usable hospital spawn areas');
+        for (let i = 0; i < 32; i++) game.enemies.spawn(points[Math.floor(i * points.length / 32)], i % 4 === 0);
+        game.run.wave = 5;
+        game.run.spawned = game.run.alive = 32;
         game.frames = [];
         game.run.elapsed = 0;
         game.showStats = true;
@@ -272,388 +268,52 @@ export function setupQA(game: GameInstance) {
         }, 330);
     });
     let checking = false;
-    async function checks() {
-        if (checking)
-            return;
-        checking = true;
-        const output = panel.querySelector('#qa-results')!;
-        output.textContent = 'Running local browser checks…\n';
-        const expect = (condition: boolean, label: string) => {
-            if (!condition)
-                throw new Error(label);
-            output.textContent += 'PASS ' + label + '\n';
-        };
-        const click = (selector: string) => {
-            const b = document.querySelector<HTMLButtonElement>(selector);
-            if (!b || b.disabled)
-                throw new Error('Unavailable UI control ' + selector);
-            b.click();
-        };
-        try {
-            start();
-            await wait(350);
-            expect(game.weapons.current === 'pistol' && game.weapons.inventory.join(',') === 'pistol,knife', 'pistol and knife starting loadout');
-            const trigger = new PointerEvent('pointerdown', {
-                button: 0, buttons: 1, pointerId: 1, pointerType: 'mouse', bubbles: true, cancelable: true
-            });
-            game.canvas.dispatchEvent(trigger);
-            expect(!trigger.defaultPrevented, 'engine preserves mouse events for firing and aiming');
-            if (!trigger.defaultPrevented)
-                game.canvas.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
-            window.dispatchEvent(new PointerEvent('pointerup', {
-                button: 0, pointerId: 1, pointerType: 'mouse', bubbles: true
-            }));
-            window.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }));
-            await wait(300);
-            expect(game.weapons.ammo === 11, 'quick pistol click fires');
-            target(4);
-            await wait(180);
-            aim(true);
-            game.shoot();
-            await wait(280);
-            expect(game.enemies.zombies.find(z => z.life === 'alive')?.health === 50, 'pistol headshot damage 50');
-            aim(true);
-            game.shoot();
-            await wait(280);
-            expect(game.run.kills === 1 && game.run.points === 75 && game.run.headshotStreak === 1, 'headshot kill pays base plus bonus');
-            target(4);
-            await wait(180);
-            for (let i = 0; i < 4; i++) {
-                aim(false);
-                game.shoot();
-                await wait(280);
-            }
-            expect(game.run.kills === 2 && game.run.points === 125 && game.run.headshotStreak === 0, 'body kill awards 50 and breaks streak');
-            const points = game.run.points;
-            expect(!game.weapons.buy('rifle', game.run) && game.run.points === points, 'cannot buy during combat');
-            openTrader(2000);
-            await wait(120);
-            expect(game.ui.shopOpen && game.run.phase === 'break', 'wave completion opens safe trader');
-            expect(document.querySelector<HTMLButtonElement>('[data-item="plasmaRifle"] button')!.disabled, 'upgrade requires base rifle');
-            click('[data-item="smg"] button');
-            expect(game.weapons.owns('smg') && game.run.points === 1550 && game.weapons.current === 'smg', 'shop button buys and equips SMG');
-            click('[data-item="rifle"] button');
-            expect(game.run.points === 900 && game.weapons.owns('rifle'), 'rifle purchase deducts price');
-            game.weapons.magazines.rifle = 2;
-            game.weapons.reserves.rifle = 10;
-            game.refreshShop();
-            click('[data-action="refill"][data-weapon="rifle"]');
-            expect(game.run.points === 800 && game.weapons.magazines.rifle === 30 && game.weapons.reserves.rifle === 180, 'paid refill restores selected ammunition');
-            click('#trader-ready');
-            await wait(350);
-            expect(!game.ui.shopOpen && game.run.wave === 2 && game.run.points === 800, 'ready button starts next wave and preserves wallet');
-            target(4);
-            await wait(180);
-            aim(true);
-            game.shoot();
-            await wait(180);
-            expect(game.enemies.zombies.find(z => z.life === 'alive')?.health === 32, 'rifle damage distinct from pistol');
-            const ammo = game.weapons.ammo, reserve = game.weapons.reserves.rifle;
-            game.reload();
-            await wait(350);
-            game.switch('pistol');
-            await wait(300);
-            expect(game.weapons.magazines.rifle === ammo && game.weapons.reserves.rifle === reserve, 'cancelled magazine reload conserves ammunition');
-            game.reload();
-            await wait(1700);
-            expect(game.weapons.ammo === 12 && game.weapons.reserve === Infinity, 'pistol retains unlimited reserve');
-            game.switch('knife');
-            await wait(350);
-            target(4);
-            await wait(150);
-            game.shoot();
-            await wait(750);
-            expect(game.enemies.zombies.find(z => z.life === 'alive')?.health === 100, 'knife cannot reach distant target');
-            target(1.05);
-            await wait(180);
-            game.shoot();
-            await wait(300);
-            expect(game.enemies.zombies.find(z => z.life === 'alive')?.health === 50, 'knife deals 50 within reach');
-            await wait(450);
-            game.shoot();
-            await wait(300);
-            openTrader(6000);
-            await wait(100);
-            click('[data-item="shotgun"] button');
-            click('[data-item="leverShotgun"] button');
-            click('[data-item="autoShotgun"] button');
-            click('[data-item="plasmaRifle"] button');
-            expect(game.weapons.owns('plasmaRifle') && game.weapons.owns('leverShotgun') && game.weapons.owns('autoShotgun'), 'upgrade purchases unlock distinct weapons');
-            click('#trader-ready');
-            await wait(350);
-            game.switch('shotgun');
-            await wait(300);
-            target(2);
-            await wait(180);
-            aim(false);
-            game.aiming = true;
-            game.shoot();
-            await wait(200);
-            const hp = game.enemies.zombies.find(z => z.life === 'alive')?.health;
-            expect(hp !== undefined && hp >= 19 && hp <= 30, 'light shotgun fires multiple lower-damage pellets');
-            game.aiming = false;
-            game.weapons.magazines.shotgun = 0;
-            game.reload();
-            await wait(680);
-            expect(game.weapons.ammo === 1 && game.weapons.reloading, 'tube shotgun loads shell by shell');
-            game.switch('pistol');
-            await wait(300);
-            expect(game.weapons.magazines.shotgun === 1, 'switch keeps inserted shell');
-            game.switch('plasmaRifle');
-            await wait(300);
-            target(4);
-            await wait(180);
-            aim(true);
-            const kills = game.run.kills;
-            game.shoot();
-            await wait(200);
-            expect(game.run.kills === kills + 1, 'plasma headshot kills in one shot');
-            game.enemies.reset();
-            game.player.position = game.grid.center(4, 6);
-            game.player.previous = {
-                ...game.player.position
-            };
-            game.run.alive = 1;
-            game.run.spawned = 1;
-            game.enemies.spawn(game.grid.center(6, 6), false);
-            const blocked = game.enemies.zombies.find(z => z.life === 'alive')!;
-            blocked.debugFrozen = true;
-            await wait(180);
-            aim(false);
-            game.shoot();
-            await wait(200);
-            expect(blocked.health === 100, 'wall blocks energy hits');
-            game.pause(true);
-            const elapsed = game.run.elapsed;
-            await wait(250);
-            expect(game.run.elapsed === elapsed, 'pause freezes simulation');
-            game.pause(false);
-            await wait(150);
-            expect(game.run.elapsed > elapsed, 'resume continues simulation');
-            game.invulnerable = false;
-            game.run.damage(100);
-            await wait(150);
-            expect(game.finished && game.run.phase === 'dead', 'zero health opens death screen');
-            start();
-            await wait(100);
-            expect(game.run.points === 0 && game.weapons.current === 'pistol' && game.weapons.inventory.length === 2, 'restart clears money and purchases');
-            for (let wave = 1; wave <= 5; wave++) {
-                clearWave();
-                await wait(100);
-                if (wave < 5) {
-                    expect(game.ui.shopOpen, 'wave ' + wave + ' opens trader');
-                    game.nextWave();
-                    await wait(100);
-                }
-            }
-            expect(game.finished && game.run.phase === 'won', 'fifth wave opens victory screen');
-            output.textContent += 'ALL LOCAL BROWSER CHECKS PASSED';
-        }
-        catch (error) {
-            output.textContent += 'FAIL ' + String(error);
-            game.pause(true);
-            console.error('Local browser checks:', error);
-        }
-        finally {
-            checking = false;
-        }
-    }
     async function missionChecks() {
-        if (checking)
-            return;
+        if (checking) return;
         checking = true;
         const output = panel.querySelector('#qa-results')!;
-        output.textContent = 'Running maps, missions and flyer checks…\n';
-        const expect = (ok: boolean, label: string) => {
-            if (!ok)
-                throw Error(label);
-            output.textContent += 'PASS ' + label + '\n';
-        };
-        const click = (selector: string) => {
-            const b = document.querySelector<HTMLButtonElement>(selector);
-            if (!b || b.disabled)
-                throw Error('Unavailable ' + selector);
-            b.click();
-        };
-        const mapReady = async () => {
-            for (let i = 0; i < 100 && game.changingMap; i++)
-                await wait(100);
-            expect(!game.changingMap, 'map finishes loading');
-        };
-        const use = (held: boolean) => window.dispatchEvent(new KeyboardEvent(held ? 'keydown' : 'keyup', {
-            code: 'KeyE', bubbles: true
-        }));
+        output.textContent = 'Running hospital objective checks…\n';
+        const use = (held: boolean) => window.dispatchEvent(new KeyboardEvent(held ? 'keydown' : 'keyup', { code: game.ui.settings.hotkeys.KeyE, bubbles: true }));
         try {
-            expect(document.title === 'One More Room In Hell', 'game title renamed');
             game.toMenu();
-            click('[data-map="depot"]');
-            await mapReady();
-            expect(game.grid.map.id === 'depot', 'map picker loads Freight Depot');
-            const meshes = game.scene.meshes.length, materials = game.scene.materials.length;
-            for (let i = 0; i < 2; i++) {
-                click('[data-map="hospital"]');
-                await mapReady();
-                click('[data-map="depot"]');
-                await mapReady();
+            game.ui.selectedMode = 'objective';
+            start();
+            for (let stage = 1; stage <= 3; stage++) {
+                game.enemies.reset();
+                game.run.spawned = game.run.total;
+                game.run.alive = 0;
+                const goal = game.grid.map.objectives[stage - 1];
+                game.player.position = game.grid.center(goal.area);
+                game.player.previous = { ...game.player.position };
+                use(true);
+                for (let i = 0; i < 600 && game.run.phase === 'wave'; i++) await wait(50);
+                use(false);
+                if (game.run.phase !== (stage < 3 ? 'break' : 'won')) throw Error(`Objective ${stage} did not complete`);
+                output.textContent += `PASS hospital objective ${stage} and Use hotkey\n`;
+                if (stage < 3) game.nextWave();
             }
-            expect(game.scene.meshes.length === meshes && game.scene.materials.length === materials, 'repeated map changes preserve scene resource counts');
-            for (const id of ['depot', 'hospital'] as const) {
-                game.toMenu();
-                click(`[data-map="${id}"]`);
-                await mapReady();
-                click('[data-mode="objective"]');
-                click('#start');
-                game.invulnerable = true;
-                game.spawnTimer = 99999;
-                await wait(250);
-                expect(game.run.mode === 'objective' && game.run.stageCount === 3 && game.run.total === 12, 'objective mode starts on ' + id);
-                expect(document.getElementById('hud-map')!.textContent === game.grid.map.name.toUpperCase(), 'HUD uses selected map name');
-                for (let stage = 1; stage <= 3; stage++) {
-                    clearWave();
-                    expect(game.run.phase === 'wave' && !game.ui.shopOpen, 'cleared encounter waits for objective ' + id + stage);
-                    const goal = game.grid.map.objectives[stage - 1];
-                    if (stage === 1) {
-                        use(true);
-                        await wait(300);
-                        use(false);
-                        expect(game.objectiveRules.progress === 0, 'remote use cannot activate terminal');
-                    }
-                    game.player.position = game.grid.center(...goal.cell);
-                    game.player.previous = {
-                        ...game.player.position
-                    };
-                    use(true);
-                    await wait(goal.hold * 1000 + 250);
-                    use(false);
-                    if (stage < 3) {
-                        expect(game.ui.shopOpen && game.run.phase === 'break', 'objective opens trader ' + id + stage);
-                        expect(document.getElementById('trader-ready')!.textContent!.includes('CONTINUE MISSION'), 'trader offers mission continuation');
-                        click('#trader-ready');
-                        game.spawnTimer = 99999;
-                        await wait(120);
-                    }
-                }
-                expect(game.run.phase === 'won' && game.finished, 'three terminals complete extraction on ' + id);
-            }
-            game.toMenu();
-            click('[data-mode="survival"]');
-            click('#start');
-            game.invulnerable = true;
-            game.spawnTimer = 99999;
-            await wait(300);
-            game.enemies.reset();
-            game.run.wave = 2;
-            game.run.spawned = 1;
-            game.run.alive = 1;
-            game.player.yaw = Math.PI;
-            game.player.pitch = 0;
-            const p = game.player.position;
-            game.enemies.spawn({
-                x: p.x, z: p.z - 4
-            }, false, 'flyer');
-            const flyer = game.enemies.zombies.find(z => z.life === 'alive')!;
-            flyer.debugFrozen = true;
-            await wait(350);
-            expect(flyer.altitude > 1 && flyer.wings.every(w => w.isEnabled()), 'flying infected hover with visible animated wings');
-            const origin = new Vector3(p.x, 1.65, p.z), low = new Vector3(0, -.2, -1).normalize();
-            expect(game.enemies.hit(origin, low, 10) === null, 'ground-level shot misses airborne hitboxes');
-            aim(true);
-            game.shoot();
-            await wait(300);
-            expect(flyer.health === 10, 'airborne headshot uses actual elevated head');
-            aim(true);
-            game.shoot();
-            await wait(250);
-            expect(flyer.life === 'dead' && game.run.points === 75, 'flying kill awards ordinary headshot credits once');
-            game.enemies.reset();
-            game.run.alive = 1;
-            game.player.position = game.grid.center(4, 6);
-            game.player.previous = {
-                ...game.player.position
-            };
-            game.enemies.spawn(game.grid.center(6, 6), false, 'flyer');
-            const blocked = game.enemies.zombies.find(z => z.life === 'alive')!;
-            blocked.debugFrozen = true;
-            await wait(250);
-            aim(true);
-            game.shoot();
-            await wait(250);
-            expect(blocked.health === 60, 'wall blocks airborne headshot');
-            game.toMenu();
-            expect(!document.getElementById('menu')!.classList.contains('hidden'), 'map and mode selection can be reopened');
-            output.textContent += 'ALL MAPS AND MISSIONS CHECKS PASSED';
-        }
-        catch (error) {
+            output.textContent += 'ALL HOSPITAL MISSION CHECKS PASSED';
+        } catch (error) {
             output.textContent += 'FAIL ' + String(error);
             game.pause(true);
-            console.error(error);
-        }
-        finally {
+        } finally {
+            use(false);
             checking = false;
         }
     }
-    async function flightCombat() {
-        const output = panel.querySelector('#qa-results')!;
-        output.textContent = 'Running close-range flight checks…\n';
-        try {
-            game.ui.selectedMode = 'survival';
-            start();
-            game.run.wave = 2;
-            game.run.spawned = 1;
-            game.run.alive = 1;
-            game.invulnerable = false;
-            game.enemies.reset();
-            game.player.yaw = Math.PI;
-            game.grid.rebuild(game.player.position);
-            const p = game.player.position;
-            game.enemies.spawn({
-                x: p.x, z: p.z - 1.05
-            }, false, 'flyer');
-            const enemy = game.enemies.zombies.find(z => z.life === 'alive')!;
-            await wait(300);
-            if (!(enemy.altitude < .6 && game.run.health === 100))
-                throw Error('Descent must precede attack damage');
-            output.textContent += 'PASS flyer descends before close attack damage\n';
-            await wait(500);
-            if (Number(game.run.health) !== 92)
-                throw Error('Expected one eight-damage dive attack');
-            output.textContent += 'PASS flyer close attack deals eight damage\nALL FLIGHT COMBAT CHECKS PASSED';
-            game.pause(true);
-        }
-        catch (error) {
-            output.textContent += 'FAIL ' + String(error);
-            game.pause(true);
-        }
-    }
-    add('Flight combat', () => void flightCombat());
     add('Mission checks', () => void missionChecks());
-    add('Run checks', () => void checks());
     const mode = new URLSearchParams(location.search).get('qa');
-    if (mode === 'flight')
-        setTimeout(() => void flightCombat(), 700);
-    if (mode === 'infected')
-        setTimeout(lineup, 700);
-    if (mode === 'sights')
-        setTimeout(sightChecks, 700);
-    if (mode === 'missions')
-        setTimeout(() => void missionChecks(), 700);
-    if (mode === 'checks')
-        setTimeout(() => void checks(), 700);
-    if (mode === 'stress')
-        setTimeout(stress, 700);
-    if (mode === 'armory')
-        setTimeout(armory, 700);
-    if (mode === 'shop')
-        setTimeout(() => {
-            start();
-            openTrader();
-            panel.style.display = 'none';
-        }, 700);
+    if (mode === 'infected') setTimeout(lineup, 700);
+    if (mode === 'sights') setTimeout(sightChecks, 700);
+    if (mode === 'missions') setTimeout(() => void missionChecks(), 700);
+    if (mode === 'stress') setTimeout(stress, 700);
+    if (mode === 'armory') setTimeout(armory, 700);
+    if (mode === 'shop') setTimeout(() => { start(); openTrader(); }, 700);
     setInterval(() => {
         panel.querySelector('#qa-state')!.textContent = JSON.stringify({
-            phase: game.run.phase, wave: game.run.wave, health: game.run.health, weapon: game.weapons.current, ammo: game.weapons.ammo, reserve: Number.isFinite(game.weapons.reserve) ? game.weapons.reserve : '∞', points: game.run.points, streak: game.run.headshotStreak, inventory: game.weapons.inventory, reload: +game.weapons.reloadRemaining.toFixed(2), kills: game.run.kills, headshots: game.run.headshots, map: game.grid.map.id, mode: game.run.mode, sceneMeshes: game.scene.meshes.length, sceneMaterials: game.scene.materials.length, waiting: game.scene.getWaitingItemsCount(), flyers: game.enemies.zombies.filter(z => z.life === 'alive' && z.kind === 'flyer').length, targets: game.enemies.zombies.filter(z => z.life === 'alive').slice(0, 2).map(z => ({
-                kind: z.kind, altitude: +z.altitude.toFixed(2), hp: z.health, head: z.head?.getAbsolutePosition().asArray().map(n => +n.toFixed(2))
-            })), ...game.metrics()
+            phase: game.run.phase, wave: game.run.wave, health: game.run.health,
+            weapon: game.weapons.current, ammo: game.weapons.ammo, points: game.run.points,
+            nativeAreas: game.grid.areas.length, position: game.player.position, ...game.metrics()
         }, null, 1);
     }, 500);
 }

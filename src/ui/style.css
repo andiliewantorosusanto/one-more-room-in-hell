@@ -255,22 +255,6 @@ h1 b {
   letter-spacing: 1px;
   margin: 11px 0 14px;
 }
-.location-line {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  font: 8px monospace;
-  letter-spacing: 1px;
-  color: #a0af96;
-}
-.location-line span:last-child {
-  margin-left: auto;
-  color: #b9856e;
-}
-.tiny-cross {
-  font: bold 19px monospace;
-  color: var(--accent);
-}
 .menu-footer {
   position: absolute;
   left: 5%;
@@ -1016,9 +1000,6 @@ kbd {
 .trader-card.owned {
   border-color: #afc27f45;
 }
-.trader-card.plasma-card {
-  border-color: #6ca4a83c;
-}
 .trader-card-top {
   display: flex;
   justify-content: space-between;
@@ -1064,14 +1045,6 @@ kbd {
   color: #71845f;
   opacity: .34;
   transform: rotate(-8deg);
-}
-.gun-silhouette.energy {
-  color: #80d2d9;
-}
-.gun-silhouette .coil {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3;
 }
 .weapon-stats {
   display: flex;
@@ -1363,47 +1336,6 @@ kbd {
   font-size: 27px;
   letter-spacing: 1px;
 }
-.map-option {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  text-align: left;
-  padding: 13px 10px;
-  margin-bottom: 9px;
-  border: 1px solid var(--line);
-  background: #0c1510;
-  color: #d8ddc9;
-}
-.map-option[aria-pressed=true] {
-  border-color: var(--accent);
-  background: #293322;
-}
-.map-option svg {
-  width: 67px;
-  height: 60px;
-  fill: #7c8a60;
-  flex-shrink: 0;
-}
-.map-option span {
-  flex: 1;
-}
-.map-option b {
-  display: block;
-  font-size: 13px;
-  letter-spacing: .3px;
-}
-.map-option small {
-  display: block;
-  font: 8px monospace;
-  color: #95a18d;
-  margin-top: 8px;
-  line-height: 1.4;
-}
-.map-option em {
-  color: var(--accent);
-  font-style: normal;
-}
 .mode-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1553,3 +1485,6 @@ kbd {
 }
 .hotkey[aria-pressed=true], .hotkey:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #settings h3 { margin-top: 30px; font-size: 14px; letter-spacing: 2px; }
+
+#load-label[role=alert] { color: #dfad91; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.hospital-location { font: 10px monospace; color: var(--accent); letter-spacing: 1px; }

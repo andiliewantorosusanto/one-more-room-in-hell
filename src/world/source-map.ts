@@ -1,17 +1,45 @@
 import type { Point } from './navigation.ts';
+import { WEAPONS } from '../weapons/weapon-rules.ts';
 
 export const SOURCE_ROOT = '/source-private/l4d2/';
 type Area = { id: number; flags: number; bounds: number[]; links: number[] };
 export type SourcePack = { infected: string[]; weapons: Record<string, string>; lights: Record<string, string>[]; nav: { origin: number[]; areas: Area[] } };
-export let sourcePack: SourcePack | undefined;
-export async function loadSourcePack() {
-    const response = await fetch(SOURCE_ROOT + 'manifest.json');
-    if (!response.ok || !response.headers.get('content-type')?.includes('json')) return;
-    const manifest = await response.json();
-    const nav = await fetch(SOURCE_ROOT + 'hospital-nav.json');
-    if (!nav.ok) throw new Error('The local hospital navigation file is missing.');
-    const lights = await fetch(SOURCE_ROOT + 'hospital.lights.json');
-    sourcePack = { ...manifest, nav: await nav.json(), lights: lights.ok && lights.headers.get('content-type')?.includes('json') ? await lights.json() : [] };
+export let sourcePack: SourcePack;
+const assetName = (value: unknown): value is string => typeof value === 'string' && /^[a-zA-Z0-9_-]+$/.test(value);
+const finiteNumbers = (value: unknown, length: number): value is number[] => Array.isArray(value) && value.length === length && value.every(n => typeof n === 'number' && Number.isFinite(n));
+
+export function validateSourcePack(manifest: unknown, navigation: unknown, lighting: unknown): SourcePack {
+    const fail = (file: string): never => { throw new Error(`Invalid L4D asset data: ${SOURCE_ROOT}${file}. Restore the converted pack in public${SOURCE_ROOT}`); };
+    if (!manifest || typeof manifest !== 'object') fail('manifest.json');
+    const m = manifest as Partial<SourcePack>;
+    if (!Array.isArray(m.infected) || !m.infected.length || !m.infected.every(assetName) || new Set(m.infected).size !== m.infected.length || !['nurse', 'patient', 'surgeon', 'police', 'civilian'].every(name => m.infected!.includes(name))) fail('manifest.json');
+    if (!m.weapons || typeof m.weapons !== 'object' || !Object.keys(WEAPONS).every(id => assetName(m.weapons![id]))) fail('manifest.json');
+    if (!navigation || typeof navigation !== 'object') fail('hospital-nav.json');
+    const nav = navigation as SourcePack['nav'];
+    if (!finiteNumbers(nav.origin, 3) || !Array.isArray(nav.areas) || !nav.areas.length) fail('hospital-nav.json');
+    const ids = new Set<number>();
+    for (const area of nav.areas) {
+        if (!area || !Number.isInteger(area.id) || ids.has(area.id) || !Number.isFinite(area.flags) || !finiteNumbers(area.bounds, 8) || area.bounds[3] <= area.bounds[0] || area.bounds[4] <= area.bounds[1] || !Array.isArray(area.links) || !area.links.every(Number.isInteger)) fail('hospital-nav.json');
+        ids.add(area.id);
+    }
+    if (!nav.areas.every(area => area.links.every(id => ids.has(id)))) fail('hospital-nav.json');
+    if (!Array.isArray(lighting) || !lighting.every(light => light && typeof light === 'object' && typeof light.origin === 'string' && finiteNumbers(light.origin.trim().split(/\s+/).map(Number), 3) && (light._light === undefined || typeof light._light === 'string' && /^\s*\S+(?:\s+\S+){2,3}\s*$/.test(light._light) && light._light.trim().split(/\s+/).every((n: string) => Number.isFinite(Number(n)))))) fail('hospital.lights.json');
+    return { infected: m.infected!, weapons: m.weapons!, nav, lights: lighting as SourcePack['lights'] };
+}
+
+export async function loadSourcePack(fetcher: typeof fetch = fetch) {
+    async function read(file: string): Promise<unknown> {
+        try {
+            const response = await fetcher(SOURCE_ROOT + file);
+            if (!response.ok || !response.headers.get('content-type')?.includes('json')) throw new Error('Missing JSON file');
+            return await response.json();
+        } catch {
+            throw new Error(`Cannot load ${SOURCE_ROOT}${file}. Restore the converted L4D pack in public${SOURCE_ROOT} and reload.`);
+        }
+    }
+    const [manifest, nav, lights] = await Promise.all(['manifest.json', 'hospital-nav.json', 'hospital.lights.json'].map(read));
+    sourcePack = validateSourcePack(manifest, nav, lights);
+    return sourcePack;
 }
 
 export class SourceNavigation {

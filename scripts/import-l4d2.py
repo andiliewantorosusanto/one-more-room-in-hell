@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--game', required=True)
 parser.add_argument('--sourceio', required=True)
 parser.add_argument('--asset', required=True)
-parser.add_argument('--role', choices=['infected', 'weapon', 'survivor', 'map'], required=True)
+parser.add_argument('--role', choices=['infected', 'weapon', 'map'], required=True)
 parser.add_argument('--output', required=True)
 args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
 os.environ['NO_BPY'] = '1'
@@ -145,8 +145,6 @@ def add_animations(container, asset):
         requested = {'idle': ['a_idle_1', 'a_idle', '@idle', 'idle'], 'walk': ['a_idle_1', 'a_idle'],
                      'run': ['a_run', 'a_idle_1'], 'fire': ['@fire', '@fire1', '@attack', 'a_fire', '@midslash1'],
                      'reload': ['@reload', '@reload_empty'], 'draw': ['@deploy', 'deploy']}
-    else:
-        requested = {'idle': ['@Idle_Standing_Pistol', '@Idle_Standing_Align', '@Idle_Standing_Rifle']}
     available = {a.name: (path, model, buf, a) for path, model, buf in sources for a in model.anim_descs}
     print('ANIMATION_NAMES', json.dumps(list(available)), flush=True)
     mapping = {}

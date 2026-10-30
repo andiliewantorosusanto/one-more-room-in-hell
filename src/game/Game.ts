@@ -1,5 +1,4 @@
 import { controlForCode, keyLabel } from '../player/controls.ts';
-import { getMap, type MapId } from '../maps/maps.ts';
 import { ObjectiveRules } from './objective-rules.ts';
 import { ObjectiveView } from '../presentation/objective-view.ts';
 import { chooseEnemyKind } from '../enemies/enemy-rules.ts';
@@ -14,7 +13,6 @@ import { WeaponView } from '../weapons/weapon-view.ts';
 import { GameAudio } from '../presentation/audio.ts';
 import { Enemies } from '../enemies/enemies.ts';
 import { Effects } from '../presentation/effects.ts';
-import { sourcePack } from '../world/source-map.ts';
 export class Game {
     canvas = document.getElementById('game') as HTMLCanvasElement;
     engine: Engine;
@@ -30,7 +28,6 @@ export class Game {
     effects: Effects;
     objectiveRules = new ObjectiveRules();
     objectiveView: ObjectiveView;
-    changingMap = false;
     keys = new Set<string>();
     paused = false;
     loaded = false;
@@ -70,7 +67,6 @@ export class Game {
         this.objectiveView = new ObjectiveView(this.scene);
         this.canvas.tabIndex = 0;
         this.ui.onStart = () => this.start();
-        this.ui.onMapChange = id => void this.selectMap(id);
         this.ui.onMenu = () => this.toMenu();
         this.ui.onRestart = () => this.start();
         this.ui.onResume = () => this.capture();
@@ -117,10 +113,6 @@ export class Game {
         this.loaded = true;
         this.player.pitch = .035;
         this.player.yaw = Math.PI - .06;
-        if (!this.grid.source) {
-            this.enemies.spawn(this.grid.center(13, 9), false);
-            this.enemies.spawn(this.grid.center(12, 5), false);
-        }
         this.ui.ready();
         if (this.qa) {
             const { setupQA } = await import('../dev/qa.ts');
@@ -132,7 +124,6 @@ export class Game {
         this.player.sensitivity = s.sensitivity;
         this.keys.clear();
         this.held = this.pressed = this.aiming = false;
-        this.world.setQuality(s.quality);
         this.resize();
     }
     resize() {
@@ -142,7 +133,7 @@ export class Game {
         this.engine.resize();
     }
     start() {
-        if (!this.loaded || this.changingMap)
+        if (!this.loaded)
             return;
         this.enemies.reset();
         this.effects.reset();
@@ -171,36 +162,7 @@ export class Game {
         this.ui.announce(1, this.run.total, this.run.mode === 'objective');
         this.capture();
     }
-    async selectMap(id: MapId) {
-        if (!this.loaded || this.changingMap || this.run.phase !== 'ready' || id === this.grid.map.id)
-            return;
-        this.changingMap = true;
-        this.ui.setMapBusy(true);
-        this.enemies.reset();
-        this.view.models.forEach(m => m.pivot.setEnabled(false));
-        try {
-            this.grid.configure(getMap(id));
-            await this.world.rebuild(() => {
-            });
-            this.ui.loading(20, 20, 'Warming selected location…');
-            this.world.setQuality(this.ui.settings.quality);
-            await this.scene.whenReadyAsync();
-            this.player.reset();
-            this.player.render(1, 0, false);
-            this.grid.rebuild(this.player.position);
-            if (!this.grid.source) this.enemies.spawn(this.grid.center(13, 9), false);
-            this.ui.setMapBusy(false);
-        }
-        catch (error) {
-            this.ui.fail(error);
-        }
-        finally {
-            this.changingMap = false;
-        }
-    }
     toMenu() {
-        if (this.changingMap)
-            return;
         this.keys.clear();
         this.held = false;
         this.pressed = false;
@@ -226,7 +188,7 @@ export class Game {
         const goal = this.grid.map.objectives[this.run.wave - 1];
         if (!goal)
             return;
-        const target = this.grid.center(...goal.cell), dx = target.x - this.player.position.x, dz = target.z - this.player.position.z, distance = Math.hypot(dx, dz);
+        const target = this.grid.center(goal.area), dx = target.x - this.player.position.x, dz = target.z - this.player.position.z, distance = Math.hypot(dx, dz);
         const angle = Math.atan2(Math.sin(Math.atan2(dx, dz) - this.player.yaw), Math.cos(Math.atan2(dx, dz) - this.player.yaw));
         const bearing = Math.abs(angle) < .5 ? 'AHEAD' : Math.abs(angle) > 2.5 ? 'BEHIND' : angle < 0 ? 'LEFT' : 'RIGHT';
         const hint = this.run.remaining > 0 ? `CLEAR ${this.run.remaining} INFECTED TO USE THE TERMINAL` : (distance > 1.65 || !this.grid.lineClear(this.player.position, target)) ? `FOLLOW THE BEACON · HOLD ${keyLabel(this.ui.settings.hotkeys.KeyE)} WHEN CLOSE` : `HOLD ${keyLabel(this.ui.settings.hotkeys.KeyE)} · ${goal.action}`;
@@ -327,12 +289,12 @@ export class Game {
                 return;
             if (code === 'KeyR')
                 this.reload();
-            if (code === 'KeyE' && this.grid.source && (this.run.mode === 'survival' || this.run.wave >= 3)) {
+            if (code === 'KeyE' && (this.run.mode === 'survival' || this.run.wave >= 3)) {
                 const p = this.player.position;
                 // ponytail: transfer between the authored elevator landings; Source's entity I/O isn't a browser runtime.
                 if (Math.hypot(p.x - 25.76, p.z - 68.3) < 5 && (Math.abs((p.y ?? 0) - 10.36) < 2 || Math.abs((p.y ?? 0) - 140.2) < 2)) {
                     const target = { x: 25.76, z: 66.5, y: (p.y ?? 0) < 50 ? 140.2 : 10.36 };
-                    this.player.position = this.grid.source.center(this.grid.source.closest(target));
+                    this.player.position = this.grid.center(this.grid.closest(target));
                     this.player.previous = { ...this.player.position };
                     this.enemies.reset(); this.grid.rebuild(this.player.position);
                 }
@@ -400,7 +362,7 @@ export class Game {
     }
     refreshShop() {
         this.ui.trader.render(this.run, this.weapons);
-        this.ui.render(this.run, this.weapons, 0, false);
+        this.ui.render(this.run, this.weapons, 0);
     }
     openShop() {
         if (this.ui.shopOpen || this.run.phase !== 'break')
@@ -439,10 +401,7 @@ export class Game {
             this.audio.play('knife', .4);
             return;
         }
-        if (id === 'plasmaRifle' && !sourcePack)
-            this.audio.plasma();
-        else
-            this.audio.play(id === 'pistol' ? 'pistol' : 'rifle', spec.pellets > 1 ? .75 : .65, undefined, spec.pellets > 1 ? .68 : id === 'smg' ? 1.2 : id === 'heavySmg' ? .9 : .98 + Math.random() * .04);
+        this.audio.play(id === 'pistol' ? 'pistol' : 'rifle', spec.pellets > 1 ? .75 : .65, undefined, spec.pellets > 1 ? .68 : id === 'smg' ? 1.2 : id === 'heavySmg' ? .9 : .98 + Math.random() * .04);
         this.run.shots++;
         let triggerHit = false;
         const spread = spec.spread * (this.aiming ? .35 : 1);
@@ -451,13 +410,9 @@ export class Game {
             const yaw = this.player.yaw + this.view.sway.yaw + Math.cos(angle) * radius, p = this.player.pitch + this.view.sway.pitch - this.view.recoil + Math.sin(angle) * radius;
             const direction = new Vector3(Math.sin(yaw) * Math.cos(p), -Math.sin(p), Math.cos(yaw) * Math.cos(p));
             const origin = new Vector3(this.player.position.x, (this.player.position.y ?? 0) + 1.65, this.player.position.z);
-            let distance = this.grid.wallDistance(origin, {
+            const distance = this.grid.wallDistance(origin, {
                 x: direction.x, y: direction.y, z: direction.z
             });
-            if (!this.grid.source && direction.y > 0)
-                distance = Math.min(distance, (3.16 - origin.y) / direction.y);
-            else if (!this.grid.source && direction.y < 0)
-                distance = Math.min(distance, -origin.y / direction.y);
             const hit = this.enemies.hit(origin, direction, distance);
             if (hit) {
                 const falloff = spec.pellets > 1 ? Math.max(.25, 1 - Math.max(0, hit.distance - 3) * .045) : 1;
@@ -467,10 +422,7 @@ export class Game {
                 this.audio.play('impact', .15, hit.zombie.position);
                 this.ui.hit(killed, hit.head);
                 triggerHit = true;
-                distance = hit.distance;
             }
-            if (id === 'plasmaRifle' && !sourcePack)
-                this.effects.energy(origin.add(new Vector3(Math.sin(yaw) * .4 + Math.cos(yaw) * .15, -.1, Math.cos(yaw) * .4 - Math.sin(yaw) * .15)), origin.add(direction.scale(distance)));
         }
         if (triggerHit)
             this.run.hits++;
@@ -524,7 +476,7 @@ export class Game {
         }
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0 && this.run.canSpawn) {
-            const locations = this.grid.map.entrances.map(([x, z]) => this.grid.center(x, z)).filter(p => !this.grid.source || Math.abs((p.y ?? 0) - (this.player.position.y ?? 0)) < 1.5);
+            const locations = this.grid.map.entrances.map(area => this.grid.center(area)).filter(p => Math.abs((p.y ?? 0) - (this.player.position.y ?? 0)) < 1.5);
             locations.sort((a, b) => {
                 const score = (p: {
                     x: number;
@@ -536,8 +488,7 @@ export class Game {
                 return score(a) - score(b);
             });
             const p = locations[Math.floor(Math.random() * Math.min(3, locations.length))];
-            let kind = chooseEnemyKind(this.run.wave, this.run.spawned, this.enemies.zombies.filter(z => z.life === 'alive' && z.kind === 'flyer').length, Math.random());
-            if (sourcePack && kind === 'flyer') kind = 'runner';
+            const kind = chooseEnemyKind(this.run.wave, this.run.spawned, Math.random());
             if (p && this.enemies.spawn(p, kind === 'runner', kind))
                 this.run.spawn();
             this.spawnTimer = Math.max(.35, .9 - this.run.wave * .08);
@@ -554,7 +505,7 @@ export class Game {
         if (this.run.mode === 'objective') {
             const goal = this.grid.map.objectives[this.run.wave - 1];
             if (goal) {
-                const target = this.grid.center(...goal.cell);
+                const target = this.grid.center(goal.area);
                 const distance = Math.hypot(target.x - this.player.position.x, target.z - this.player.position.z);
                 this.objectiveRules.update(dt, this.run, distance, this.grid.lineClear(this.player.position, target), this.keys.has('KeyE'), goal.hold);
             }
@@ -610,7 +561,7 @@ export class Game {
             this.player.render(this.accumulator / (1 / 60), delta, this.aiming, this.view.recoil, this.ui.settings.reducedMotion);
             this.enemies.render(this.accumulator / (1 / 60));
             this.view.update(delta, this.weapons, this.player.moving, this.player.sprinting, this.aiming, this.clock, this.ui.settings.reducedMotion);
-            this.ui.render(this.run, this.weapons, delta, this.aiming);
+            this.ui.render(this.run, this.weapons, delta);
             this.updateObjectiveHUD();
         }
         else if (this.run.phase === 'ready') {
