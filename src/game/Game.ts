@@ -1,3 +1,4 @@
+import { controlForCode, keyLabel } from '../player/controls.ts';
 import { getMap, type MapId } from '../maps/maps.ts';
 import { ObjectiveRules } from './objective-rules.ts';
 import { ObjectiveView } from '../presentation/objective-view.ts';
@@ -129,6 +130,8 @@ export class Game {
     settings(s: Settings) {
         this.audio.setVolume(s.volume);
         this.player.sensitivity = s.sensitivity;
+        this.keys.clear();
+        this.held = this.pressed = this.aiming = false;
         this.world.setQuality(s.quality);
         this.resize();
     }
@@ -226,7 +229,7 @@ export class Game {
         const target = this.grid.center(...goal.cell), dx = target.x - this.player.position.x, dz = target.z - this.player.position.z, distance = Math.hypot(dx, dz);
         const angle = Math.atan2(Math.sin(Math.atan2(dx, dz) - this.player.yaw), Math.cos(Math.atan2(dx, dz) - this.player.yaw));
         const bearing = Math.abs(angle) < .5 ? 'AHEAD' : Math.abs(angle) > 2.5 ? 'BEHIND' : angle < 0 ? 'LEFT' : 'RIGHT';
-        const hint = this.run.remaining > 0 ? `CLEAR ${this.run.remaining} INFECTED TO USE THE TERMINAL` : (distance > 1.65 || !this.grid.lineClear(this.player.position, target)) ? 'FOLLOW THE BEACON · HOLD E WHEN CLOSE' : `HOLD E · ${goal.action}`;
+        const hint = this.run.remaining > 0 ? `CLEAR ${this.run.remaining} INFECTED TO USE THE TERMINAL` : (distance > 1.65 || !this.grid.lineClear(this.player.position, target)) ? `FOLLOW THE BEACON · HOLD ${keyLabel(this.ui.settings.hotkeys.KeyE)} WHEN CLOSE` : `HOLD ${keyLabel(this.ui.settings.hotkeys.KeyE)} · ${goal.action}`;
         this.ui.objective(goal.title, distance, bearing, hint, this.objectiveRules.progress / goal.hold);
     }
     capture() {
@@ -314,16 +317,17 @@ export class Game {
                 }
                 return;
             }
-            if (this.paused || this.finished || this.ui.shopOpen || this.run.phase === 'ready')
+            if (this.paused || this.finished || this.ui.shopOpen || document.querySelector('dialog[open]') || this.run.phase === 'ready')
                 return;
-            if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'KeyR', 'KeyE'].includes(e.code) || /^Digit[1-9]$/.test(e.code))
-                e.preventDefault();
-            this.keys.add(e.code);
+            const code = controlForCode(e.code, this.ui.settings.hotkeys);
+            if (!code) return;
+            e.preventDefault();
+            this.keys.add(code);
             if (e.repeat)
                 return;
-            if (e.code === 'KeyR')
+            if (code === 'KeyR')
                 this.reload();
-            if (e.code === 'KeyE' && this.grid.source && (this.run.mode === 'survival' || this.run.wave >= 3)) {
+            if (code === 'KeyE' && this.grid.source && (this.run.mode === 'survival' || this.run.wave >= 3)) {
                 const p = this.player.position;
                 // ponytail: transfer between the authored elevator landings; Source's entity I/O isn't a browser runtime.
                 if (Math.hypot(p.x - 25.76, p.z - 68.3) < 5 && (Math.abs((p.y ?? 0) - 10.36) < 2 || Math.abs((p.y ?? 0) - 140.2) < 2)) {
@@ -333,13 +337,16 @@ export class Game {
                     this.enemies.reset(); this.grid.rebuild(this.player.position);
                 }
             }
-            if (/^Digit[1-9]$/.test(e.code)) {
-                const id = this.weapons.inventory[Number(e.code.slice(-1)) - 1];
+            if (/^Digit[1-9]$/.test(code)) {
+                const id = this.weapons.inventory[Number(code.slice(-1)) - 1];
                 if (id)
                     this.switch(id);
             }
         });
-        window.addEventListener('keyup', e => this.keys.delete(e.code));
+        window.addEventListener('keyup', e => {
+            const code = controlForCode(e.code, this.ui.settings.hotkeys);
+            if (code) this.keys.delete(code);
+        });
         document.addEventListener('mousemove', e => {
             if (!this.paused && !this.finished && (document.pointerLockElement === this.canvas || this.fallbackLook && (e.buttons & 2) !== 0))
                 this.player.look(e.movementX, e.movementY);

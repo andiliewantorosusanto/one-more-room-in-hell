@@ -1,3 +1,4 @@
+import { DEFAULT_HOTKEYS, CONTROL_LABELS, loadHotkeys, rebind, validHotkey, keyLabel, type Hotkeys, type Control } from '../player/controls.ts';
 import { MAPS, getMap, type MapId, type GameMode } from '../maps/maps.ts';
 import { RunRules, headshotStreakBonus } from '../game/run-rules.ts';
 import { WEAPONS, WeaponRules } from '../weapons/weapon-rules.ts';
@@ -8,6 +9,7 @@ export type Settings = {
     quality: Quality;
     volume: number;
     sensitivity: number;
+    hotkeys: Hotkeys;
     reducedMotion: boolean;
 };
 const cross = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12 3h8v9h9v8h-9v9h-8v-9H3v-8h9z" fill="currentColor"/></svg>';
@@ -19,7 +21,7 @@ export class UI {
     onMapChange = (_map: MapId) => {
     };
     settings: Settings = {
-        quality: 'medium', volume: .65, sensitivity: 1, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches
+        quality: 'medium', volume: .65, sensitivity: 1, hotkeys: { ...DEFAULT_HOTKEYS }, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches
     };
     onStart = () => {
     };
@@ -48,8 +50,9 @@ export class UI {
                 if (['low', 'medium', 'high'].includes(s.quality))
                     this.settings.quality = s.quality;
                 for (const k of ['volume', 'sensitivity'] as const)
-                    if (typeof s[k] === 'number')
+                    if (typeof s[k] === 'number' && Number.isFinite(s[k]))
                         this.settings[k] = Math.max(k === 'volume' ? 0 : .3, Math.min(k === 'volume' ? 1 : 2.5, s[k]));
+                this.settings.hotkeys = loadHotkeys(s.hotkeys);
                 if (typeof s.reducedMotion === 'boolean')
                     this.settings.reducedMotion = s.reducedMotion;
             }
@@ -82,8 +85,8 @@ export class UI {
       </div>
       <section id="pause" class="screen-overlay hidden"><div class="overlay-card"><span class="eyebrow">CATCH YOUR BREATH</span><h2>PAUSED</h2><p>Hell can wait.</p><button id="resume" class="primary">RESUME <span>→</span></button><button data-dialog="settings" class="secondary">SETTINGS</button><button id="restart-pause" class="text-button">RESTART RUN</button><button data-menu class="text-button">MAP & MODE SELECT</button></div></section>
       <section id="end" class="screen-overlay hidden"><div class="overlay-card"><span id="end-eyebrow" class="eyebrow">END OF TRANSMISSION</span><h2 id="end-title">OVERRUN</h2><p id="end-copy">Another room claimed another survivor.</p><div id="end-stats" class="end-stats"></div><button id="restart" class="primary">TRY AGAIN <span>→</span></button><button data-menu class="text-button">MAP & MODE SELECT</button><button data-dialog="credits" class="text-button">ASSET CREDITS</button></div></section>
-      <dialog id="controls" class="dialog"><button class="close" aria-label="Close controls">×</button><span class="eyebrow">SURVIVAL MANUAL</span><h2>KEEP MOVING.</h2><p>Survival: clear five waves. Objective: clear each encounter, then find the marked terminal and hold E to restore power, signal rescue, and extract. Each completed objective pays 150 points. Start with a pistol and knife. Earn 50 points per kill, 25 extra for a headshot kill, and up to 50 extra for a headshot-kill streak. Between waves, recover 25 health and buy weapons, upgrades, or ammunition from the trader. Your pistol always has unlimited reserve ammunition.</p><dl class="controls-grid"><dt><kbd>W A S D</kbd></dt><dd>Move</dd><dt><kbd>MOUSE</kbd></dt><dd>Look around</dd><dt><kbd>LEFT CLICK</kbd></dt><dd>Fire / knife attack</dd><dt><kbd>RIGHT CLICK</kbd></dt><dd>Aim down sights</dd><dt><kbd>SHIFT</kbd></dt><dd>Sprint</dd><dt><kbd>R</kbd></dt><dd>Reload</dd><dt><kbd>E</kbd></dt><dd>Hold to use an objective terminal</dd><dt><kbd>1 — 9</kbd></dt><dd>Select an owned weapon</dd><dt><kbd>SCROLL</kbd></dt><dd>Switch weapon</dd><dt><kbd>ESC</kbd></dt><dd>Pause / release mouse</dd></dl><p class="fine">Headshots deal double firearm damage. A body-shot kill or taking damage breaks your headshot-kill streak. Switching cancels a magazine reload; already loaded shotgun shells are kept. The trader waits until you are ready.</p></dialog>
-      <dialog id="settings" class="dialog"><button class="close" aria-label="Close settings">×</button><span class="eyebrow">FIELD ADJUSTMENTS</span><h2>SETTINGS</h2><label class="setting">Graphics quality<select id="quality"><option value="low">Low</option><option value="medium">Balanced</option><option value="high">High</option></select></label><label class="setting">Sound volume<input id="volume" type="range" min="0" max="1" step=".05"></label><label class="setting">Mouse sensitivity<input id="sensitivity" type="range" min=".3" max="2.5" step=".1"></label><label class="setting">Reduced camera motion<input id="motion" type="checkbox"></label><p class="fine">Balanced is recommended for laptops. Graphics quality changes rendering resolution and surface detail; the horde stays the same size.</p></dialog>
+      <dialog id="controls" class="dialog"><button class="close" aria-label="Close controls">×</button><span class="eyebrow">SURVIVAL MANUAL</span><h2>KEEP MOVING.</h2><p>Survival: clear five waves. Objective: clear each encounter, then find the marked terminal and hold your Use key to restore power, signal rescue, and extract. Each completed objective pays 150 points. Start with a pistol and knife. Earn 50 points per kill, 25 extra for a headshot kill, and up to 50 extra for a headshot-kill streak. Between waves, recover 25 health and buy weapons, upgrades, or ammunition from the trader. Your pistol always has unlimited reserve ammunition.</p><dl class="controls-grid"><dt><kbd data-control="movement"></kbd></dt><dd>Move</dd><dt><kbd>MOUSE</kbd></dt><dd>Look around</dd><dt><kbd>LEFT CLICK</kbd></dt><dd>Fire / knife attack</dd><dt><kbd>RIGHT CLICK</kbd></dt><dd>Aim down sights</dd><dt><kbd data-control="ShiftLeft"></kbd></dt><dd>Sprint</dd><dt><kbd data-control="KeyR"></kbd></dt><dd>Reload</dd><dt><kbd data-control="KeyE"></kbd></dt><dd>Hold to use an objective terminal</dd><dt><kbd data-control="slots"></kbd></dt><dd>Select an owned weapon</dd><dt><kbd>SCROLL</kbd></dt><dd>Switch weapon</dd><dt><kbd>ESC</kbd></dt><dd>Pause / release mouse</dd></dl><p class="fine">Headshots deal double firearm damage. A body-shot kill or taking damage breaks your headshot-kill streak. Switching cancels a magazine reload; already loaded shotgun shells are kept. The trader waits until you are ready.</p></dialog>
+      <dialog id="settings" class="dialog"><button class="close" aria-label="Close settings">×</button><span class="eyebrow">FIELD ADJUSTMENTS</span><h2>SETTINGS</h2><label class="setting">Graphics quality<select id="quality"><option value="low">Low</option><option value="medium">Balanced</option><option value="high">High</option></select></label><label class="setting">Sound volume<input id="volume" type="range" min="0" max="1" step=".05"></label><label class="setting">Mouse sensitivity <output id="sensitivity-value" for="sensitivity"></output><input id="sensitivity" type="range" min=".3" max="2.5" step=".1"></label><label class="setting">Reduced camera motion<input id="motion" type="checkbox"></label><h3>CONTROL HOTKEYS</h3><p>Click a key, then press its replacement. Escape cancels. Keys already in use swap places. Escape pauses; F3 shows performance. Mouse buttons and scroll keep their usual controls.</p><div id="hotkey-settings"></div><p id="hotkey-status" role="status">Changes save automatically on this browser.</p><button id="reset-controls" class="secondary">RESET CONTROLS &amp; SENSITIVITY</button><p class="fine">Balanced is recommended for laptops. Graphics quality changes rendering resolution and surface detail; the horde stays the same size.</p></dialog>
       <dialog id="credits" class="dialog"><button class="close" aria-label="Close credits">×</button><span class="eyebrow">BUILT WITH FREE ASSETS</span><h2>CREDITS</h2><div class="credits-copy"><p><a href="https://sketchfab.com/3d-models/fps-ak-74m-animations-94be8385c402474cacd39bc096c6ca14" target="_blank" rel="noopener noreferrer">AK-74M animations</a> and <a href="https://sketchfab.com/3d-models/fps-pistol-animations-0d7a343dcb6f401197a73c91aee93f6d" target="_blank" rel="noopener noreferrer">pistol animations</a> — Cransh. Rifle: creationwasteland. Pistol: raimeiyonke. Arms: DJMaesen. CC BY 4.0.</p><p>Realistic infected variants (WorldWar, Yaku, Parasite) and retargeted zombie motions - Adobe / Mixamo, royalty-free use in this game. <a href="https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html" target="_blank" rel="noopener noreferrer">Usage terms</a>. Original textures retained; rigs, scale and animation packaging adapted.</p><p>Animated knife &amp; arms — <a href="https://sketchfab.com/3d-models/knife-animated-f3140db917cc43389c14b5b2536c1dc8" target="_blank" rel="noopener noreferrer">DJMaesen</a>, CC BY 4.0. Converted, textures resized, hand attachment repaired.</p><p><a href="https://opengameart.org/content/thin-zombie-awake-zombie-asset" target="_blank" rel="noopener noreferrer">Thin Zombie / Awake Zombie</a> — Rosswet Mobile, CC BY 3.0. GLB conversion from Walking Dead by Morgan Nriu; scale and material adjusted.</p><p>Environment surface textures — <a href="https://ambientcg.com" target="_blank" rel="noopener noreferrer">ambientCG / Lennart Demes</a>, CC0. Selected maps resized and re-encoded.</p><p>Real firearm recordings — Ben Jaszczak et al., <a href="https://opengameart.org/content/the-free-firearm-sound-library" target="_blank" rel="noopener noreferrer">The Free Firearm Sound Library</a>, CC0. Additional sounds: BMacZero, Fantozzi, artisticdude and yd, CC0. Trimmed and mixed for this game.</p><p>Added SMGs, shotguns and plasma rifle — original local geometry, reusing the credited rifle arm rig and clips. Plasma audio is synthesized locally.</p><p>Rendering — Babylon.js, Apache 2.0. Original maps, flying-infected wings, props, gameplay, and interface created for One More Room In Hell. Flying infected reuse the credited zombie body and clips.</p><a href="/ASSET-CREDITS.md" target="_blank" rel="noopener noreferrer">Full sources, modifications and license details ↗</a></div></dialog>
       <output id="performance" class="performance hidden"></output>`;
         this.trader = new TraderUI(this.app);
@@ -121,19 +124,64 @@ export class UI {
         motion.checked = this.settings.reducedMotion;
         const change = () => {
             this.settings = {
-                quality: quality.value as Quality, volume: +volume.value, sensitivity: +sensitivity.value, reducedMotion: motion.checked
+                hotkeys: this.settings.hotkeys, quality: quality.value as Quality, volume: +volume.value, sensitivity: +sensitivity.value, reducedMotion: motion.checked
             };
             try {
                 localStorage.setItem('ward-zero-settings', JSON.stringify(this.settings));
             }
             catch {
             }
+            this.refreshControls();
             this.onSettings(this.settings);
         };
         quality.onchange = change;
         volume.oninput = change;
         sensitivity.oninput = change;
         motion.onchange = change;
+        const hotkeyRoot = document.getElementById('hotkey-settings')!;
+        hotkeyRoot.innerHTML = (Object.keys(CONTROL_LABELS) as Control[]).map(action => `<div class="setting"><span id="label-${action}">${CONTROL_LABELS[action]}</span><button type="button" class="hotkey" data-hotkey="${action}" aria-labelledby="label-${action} key-${action}" id="key-${action}"></button></div>`).join('');
+        let pending: Control | undefined;
+        const status = document.getElementById('hotkey-status')!;
+        const cancelCapture = () => {
+            pending = undefined;
+            this.refreshControls();
+        };
+        hotkeyRoot.querySelectorAll<HTMLButtonElement>('[data-hotkey]').forEach(button => button.onclick = () => {
+            cancelCapture();
+            pending = button.dataset.hotkey as Control;
+            button.textContent = 'PRESS KEY…';
+            button.setAttribute('aria-pressed', 'true');
+            status.textContent = `Choose a key for ${CONTROL_LABELS[pending]}. Escape cancels.`;
+        });
+        document.addEventListener('keydown', e => {
+            if (!pending) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (e.code === 'Escape') {
+                cancelCapture();
+                status.textContent = 'Key change cancelled.';
+            } else if (!e.repeat && validHotkey(e.code)) {
+                this.settings.hotkeys = rebind(this.settings.hotkeys, pending, e.code);
+                cancelCapture();
+                change();
+                status.textContent = 'Hotkeys saved. Any occupied key was swapped.';
+            } else {
+                status.textContent = 'Choose a letter, number, arrow or modifier key. Escape cancels.';
+            }
+        }, true);
+        const dialog = document.getElementById('settings') as HTMLDialogElement;
+        dialog.addEventListener('close', cancelCapture);
+        dialog.addEventListener('click', e => {
+            if (!(e.target as HTMLElement).closest('[data-hotkey]')) cancelCapture();
+        });
+        document.getElementById('reset-controls')!.onclick = () => {
+            cancelCapture();
+            this.settings.hotkeys = { ...DEFAULT_HOTKEYS };
+            sensitivity.value = '1';
+            change();
+            status.textContent = 'Default hotkeys and sensitivity restored.';
+        };
+        this.refreshControls();
     }
     updateDeployment() {
         this.app.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.map === this.selectedMap)));
@@ -179,8 +227,24 @@ export class UI {
         document.getElementById('load-fill')!.style.width = `${done / total * 100}%`;
         document.getElementById('load-label')!.textContent = `${label} ${Math.round(done / total * 100)}%`;
     }
+    private fallbackMouse = false;
+    refreshControls() {
+        const label = (action: string) => keyLabel(this.settings.hotkeys[action as Control]);
+        document.getElementById('sensitivity-value')!.textContent = `${this.settings.sensitivity.toFixed(1)}×`;
+        this.app.querySelectorAll<HTMLButtonElement>('[data-hotkey]').forEach(b => {
+            b.textContent = label(b.dataset.hotkey!);
+            b.setAttribute('aria-pressed', 'false');
+        });
+        this.app.querySelectorAll<HTMLElement>('[data-control]').forEach(el => {
+            const action = el.dataset.control!;
+            el.textContent = action === 'movement' ? ['KeyW', 'KeyA', 'KeyS', 'KeyD'].map(label).join(' / ') : action === 'slots' ? Array.from({length: 9}, (_, i) => label(`Digit${i + 1}`)).join(' / ') : label(action);
+        });
+        this.inventorySignature = '';
+        this.mouseMode(this.fallbackMouse);
+    }
     mouseMode(fallback: boolean) {
-        this.app.querySelector('.hud-help')!.textContent = fallback ? 'HOLD RIGHT MOUSE TO LOOK · E USE · R RELOAD · ESC PAUSE' : 'E USE · R RELOAD · SHIFT SPRINT · ESC PAUSE';
+        this.fallbackMouse = fallback;
+        this.app.querySelector('.hud-help')!.textContent = `${fallback ? 'HOLD RIGHT MOUSE TO LOOK · ' : ''}${keyLabel(this.settings.hotkeys.KeyE)} USE · ${keyLabel(this.settings.hotkeys.KeyR)} RELOAD · ${keyLabel(this.settings.hotkeys.ShiftLeft)} SPRINT · ESC PAUSE`;
     }
     ready() {
         this.app.querySelectorAll<HTMLButtonElement>('[data-map]').forEach(b => b.disabled = false);
@@ -273,7 +337,7 @@ export class UI {
         const signature = w.inventory.join(',');
         if (signature !== this.inventorySignature) {
             this.inventorySignature = signature;
-            document.getElementById('weapon-slots')!.innerHTML = w.inventory.map((id, i) => `<span id="slot-${id}"><kbd>${i + 1}</kbd> ${WEAPONS[id].name}</span>`).join('');
+            document.getElementById('weapon-slots')!.innerHTML = w.inventory.map((id, i) => `<span id="slot-${id}"><kbd>${keyLabel(this.settings.hotkeys[`Digit${i + 1}` as Control])}</kbd> ${WEAPONS[id].name}</span>`).join('');
         }
         for (const id of w.inventory)
             document.getElementById('slot-' + id)!.classList.toggle('selected', id === w.current);
@@ -293,7 +357,7 @@ export class UI {
         });
         const reload = w.reloading || w.current !== 'knife' && w.ammo === 0;
         this.els['reload-prompt'].classList.toggle('hidden', !reload);
-        text('reload-message', w.reloading ? (WEAPONS[w.current].reloadStyle === 'shell' ? 'LOADING SHELL' : 'RELOADING') : w.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : 'PRESS R TO RELOAD');
+        text('reload-message', w.reloading ? (WEAPONS[w.current].reloadStyle === 'shell' ? 'LOADING SHELL' : 'RELOADING') : w.reserve === 0 ? 'EMPTY · SWITCH WEAPON' : `PRESS ${keyLabel(this.settings.hotkeys.KeyR)} TO RELOAD`);
         this.els['reload-progress'].style.width = (w.reloadProgress * 100) + '%';
         this.announcement = Math.max(0, this.announcement - dt);
         this.els['wave-notice'].classList.toggle('visible', !this.shopOpen && (this.announcement > 0 || run.phase === 'break'));

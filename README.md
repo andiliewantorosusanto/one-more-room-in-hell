@@ -30,6 +30,8 @@ Choose **Hospital Isolation** or **Freight Depot** from the main menu. Each has 
 
 ## Controls
 
+Open **Settings** from the main menu or pause menu to remap movement, sprint, reload, Use, and weapon-slot hotkeys. Click a binding and press a new key; occupied keys swap, and Escape cancels. Mouse sensitivity ranges from 0.3× to 2.5× with a live value. Changes save in this browser. **Reset controls & sensitivity** restores defaults; Escape, F3, mouse buttons and scroll retain their usual roles.
+
 WASD: move. Shift: sprint. Mouse: look. Left click: fire/slash. Right click: aim. R: reload. 1–9 or scroll: select owned weapons in the order shown in the HUD. E: hold to use an objective terminal. Escape: pause; the pause menu can return to map/mode selection. F3: performance counters.
 
 Start with a 12-round pistol (unlimited reserve) and a knife with 1.5m reach. Player and zombie health is 100. Firearm headshots deal double damage. Switch weapons to cancel a magazine reload; shotgun shells already inserted are retained. A loaded tube shotgun can interrupt its reload by firing.

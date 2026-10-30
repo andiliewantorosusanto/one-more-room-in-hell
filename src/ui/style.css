@@ -1540,3 +1540,16 @@ kbd {
     margin-top: 12px;
   }
 }
+
+#sensitivity-value { margin-left: auto; white-space: nowrap; color: var(--accent); }
+#hotkey-settings .setting { margin: 10px 0; }
+.hotkey {
+  min-width: 135px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  color: var(--accent);
+  background: #0e170e;
+  font: 11px monospace;
+}
+.hotkey[aria-pressed=true], .hotkey:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#settings h3 { margin-top: 30px; font-size: 14px; letter-spacing: 2px; }
