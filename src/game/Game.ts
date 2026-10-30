@@ -13,6 +13,7 @@ import { WeaponView } from '../weapons/weapon-view.ts';
 import { GameAudio } from '../presentation/audio.ts';
 import { Enemies } from '../enemies/enemies.ts';
 import { Effects } from '../presentation/effects.ts';
+import { sourcePack } from '../world/source-map.ts';
 export class Game {
     canvas = document.getElementById('game') as HTMLCanvasElement;
     engine: Engine;
@@ -57,6 +58,7 @@ export class Game {
         if (this.engine.webGLVersion < 2)
             throw new Error('WebGL2 is required. Please enable hardware acceleration in a desktop browser.');
         this.scene = new Scene(this.engine);
+        this.scene.preventDefaultOnPointerDown = false;
         this.scene.setRenderingAutoClearDepthStencil(2, true, true, true);
         this.player = new Player(this.grid, this.scene);
         this.scene.activeCamera = this.player.camera;
@@ -102,6 +104,8 @@ export class Game {
         let done = 0;
         const progress = () => this.ui.loading(++done, 20);
         await Promise.all([this.world.build(progress), this.audio.load(progress), this.view.load(progress), this.enemies.load(progress)]);
+        // The forward-facing flashlight must not illuminate its own first-person rig.
+        this.world.flashlight.excludedMeshes = [...this.view.models.values()].flatMap(model => model.pivot.getChildMeshes());
         this.ui.loading(20, 20, 'Checking equipment…');
         await this.scene.whenReadyAsync();
         this.ui.loading(20, 20, 'Warming weapons…');
@@ -112,8 +116,10 @@ export class Game {
         this.loaded = true;
         this.player.pitch = .035;
         this.player.yaw = Math.PI - .06;
-        this.enemies.spawn(this.grid.center(13, 9), false);
-        this.enemies.spawn(this.grid.center(12, 5), false);
+        if (!this.grid.source) {
+            this.enemies.spawn(this.grid.center(13, 9), false);
+            this.enemies.spawn(this.grid.center(12, 5), false);
+        }
         this.ui.ready();
         if (this.qa) {
             const { setupQA } = await import('../dev/qa.ts');
@@ -179,7 +185,7 @@ export class Game {
             this.player.reset();
             this.player.render(1, 0, false);
             this.grid.rebuild(this.player.position);
-            this.enemies.spawn(this.grid.center(13, 9), false);
+            if (!this.grid.source) this.enemies.spawn(this.grid.center(13, 9), false);
             this.ui.setMapBusy(false);
         }
         catch (error) {
@@ -317,6 +323,16 @@ export class Game {
                 return;
             if (e.code === 'KeyR')
                 this.reload();
+            if (e.code === 'KeyE' && this.grid.source && (this.run.mode === 'survival' || this.run.wave >= 3)) {
+                const p = this.player.position;
+                // ponytail: transfer between the authored elevator landings; Source's entity I/O isn't a browser runtime.
+                if (Math.hypot(p.x - 25.76, p.z - 68.3) < 5 && (Math.abs((p.y ?? 0) - 10.36) < 2 || Math.abs((p.y ?? 0) - 140.2) < 2)) {
+                    const target = { x: 25.76, z: 66.5, y: (p.y ?? 0) < 50 ? 140.2 : 10.36 };
+                    this.player.position = this.grid.source.center(this.grid.source.closest(target));
+                    this.player.previous = { ...this.player.position };
+                    this.enemies.reset(); this.grid.rebuild(this.player.position);
+                }
+            }
             if (/^Digit[1-9]$/.test(e.code)) {
                 const id = this.weapons.inventory[Number(e.code.slice(-1)) - 1];
                 if (id)
@@ -416,7 +432,7 @@ export class Game {
             this.audio.play('knife', .4);
             return;
         }
-        if (id === 'plasmaRifle')
+        if (id === 'plasmaRifle' && !sourcePack)
             this.audio.plasma();
         else
             this.audio.play(id === 'pistol' ? 'pistol' : 'rifle', spec.pellets > 1 ? .75 : .65, undefined, spec.pellets > 1 ? .68 : id === 'smg' ? 1.2 : id === 'heavySmg' ? .9 : .98 + Math.random() * .04);
@@ -425,15 +441,15 @@ export class Game {
         const spread = spec.spread * (this.aiming ? .35 : 1);
         for (let pellet = 0; pellet < spec.pellets; pellet++) {
             const radius = Math.sqrt(Math.random()) * spread, angle = Math.random() * Math.PI * 2;
-            const yaw = this.player.yaw + Math.cos(angle) * radius, p = this.player.pitch - this.view.recoil + Math.sin(angle) * radius;
+            const yaw = this.player.yaw + this.view.sway.yaw + Math.cos(angle) * radius, p = this.player.pitch + this.view.sway.pitch - this.view.recoil + Math.sin(angle) * radius;
             const direction = new Vector3(Math.sin(yaw) * Math.cos(p), -Math.sin(p), Math.cos(yaw) * Math.cos(p));
-            const origin = new Vector3(this.player.position.x, 1.65, this.player.position.z);
+            const origin = new Vector3(this.player.position.x, (this.player.position.y ?? 0) + 1.65, this.player.position.z);
             let distance = this.grid.wallDistance(origin, {
-                x: direction.x, z: direction.z
+                x: direction.x, y: direction.y, z: direction.z
             });
-            if (direction.y > 0)
+            if (!this.grid.source && direction.y > 0)
                 distance = Math.min(distance, (3.16 - origin.y) / direction.y);
-            else if (direction.y < 0)
+            else if (!this.grid.source && direction.y < 0)
                 distance = Math.min(distance, -origin.y / direction.y);
             const hit = this.enemies.hit(origin, direction, distance);
             if (hit) {
@@ -446,7 +462,7 @@ export class Game {
                 triggerHit = true;
                 distance = hit.distance;
             }
-            if (id === 'plasmaRifle')
+            if (id === 'plasmaRifle' && !sourcePack)
                 this.effects.energy(origin.add(new Vector3(Math.sin(yaw) * .4 + Math.cos(yaw) * .15, -.1, Math.cos(yaw) * .4 - Math.sin(yaw) * .15)), origin.add(direction.scale(distance)));
         }
         if (triggerHit)
@@ -501,17 +517,21 @@ export class Game {
         }
         this.spawnTimer -= dt;
         if (this.spawnTimer <= 0 && this.run.canSpawn) {
-            const locations = this.grid.map.entrances.map(([x, z]) => this.grid.center(x, z));
+            const locations = this.grid.map.entrances.map(([x, z]) => this.grid.center(x, z)).filter(p => !this.grid.source || Math.abs((p.y ?? 0) - (this.player.position.y ?? 0)) < 1.5);
             locations.sort((a, b) => {
                 const score = (p: {
                     x: number;
                     z: number;
-                }) => Math.hypot(p.x - this.player.position.x, p.z - this.player.position.z) + (this.grid.lineClear(p, this.player.position) ? 0 : 20);
-                return score(b) - score(a);
+                }) => {
+                    const distance = Math.hypot(p.x - this.player.position.x, p.z - this.player.position.z);
+                    return Math.abs(distance - 13) + (distance < 7 ? 100 : 0) + (this.grid.lineClear(p, this.player.position) ? 20 : 0);
+                };
+                return score(a) - score(b);
             });
             const p = locations[Math.floor(Math.random() * Math.min(3, locations.length))];
-            const kind = chooseEnemyKind(this.run.wave, this.run.spawned, this.enemies.zombies.filter(z => z.life === 'alive' && z.kind === 'flyer').length, Math.random());
-            if (this.enemies.spawn(p, kind === 'runner', kind))
+            let kind = chooseEnemyKind(this.run.wave, this.run.spawned, this.enemies.zombies.filter(z => z.life === 'alive' && z.kind === 'flyer').length, Math.random());
+            if (sourcePack && kind === 'flyer') kind = 'runner';
+            if (p && this.enemies.spawn(p, kind === 'runner', kind))
                 this.run.spawn();
             this.spawnTimer = Math.max(.35, .9 - this.run.wave * .08);
         }

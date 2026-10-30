@@ -62,7 +62,7 @@ export class ObjectiveView {
         if (key !== this.stage) {
             this.stage = key;
             const p = grid.center(...goal.cell);
-            this.root.position.set(p.x, 0, p.z);
+            this.root.position.set(p.x, p.y ?? 0, p.z);
             const c = this.label.getContext();
             c.fillStyle = '#101814';
             c.fillRect(0, 0, 512, 128);

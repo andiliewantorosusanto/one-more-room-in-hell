@@ -1,5 +1,9 @@
 import type { RunRules } from '../game/run-rules.ts';
 export type WeaponId = 'pistol' | 'knife' | 'smg' | 'heavySmg' | 'rifle' | 'shotgun' | 'leverShotgun' | 'autoShotgun' | 'plasmaRifle';
+export function weaponSway(time: number, aimBlend: number, moving: boolean, reducedMotion: boolean) {
+    const amount = reducedMotion ? 0 : (1 - .85 * aimBlend) * (moving ? 1.4 : 1);
+    return { yaw: Math.sin(time * 1.35) * .004 * amount, pitch: Math.sin(time * 1.9 + .7) * .003 * amount };
+}
 export type WeaponSpec = {
     name: string;
     label: string;

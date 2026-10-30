@@ -43,6 +43,8 @@ export type WeaponArt = {
     shell?: TransformNode;
     vents: TransformNode[];
     kind: AuthoredWeaponId;
+    sightLine: Vector3;
+    sights: { rear: TransformNode; front: TransformNode };
     reset: () => void;
     update: (shotAge: number, reloadProgress: number, reloading: boolean) => void;
 };
@@ -168,6 +170,29 @@ export function attachViewFrame(node: TransformNode, socket: TransformNode, pivo
     node.parent = socket;
     node.setPreTransformMatrix(local);
 }
+/** Physical U-notch rear sight and front blade. Sight tips share the bore's axis. */
+export function createIronSights(scene: Scene, pivot: TransformNode, socket: TransformNode, rear: Vector3, front: Vector3) {
+    const b = new Parts(scene), p = palette(scene);
+    const anchors = {} as { rear: TransformNode; front: TransformNode };
+    for (const [position, isFront] of [[rear, false], [front, true]] as const) {
+        const frame = new TransformNode(isFront ? 'front-iron' : 'rear-iron', scene);
+        anchors[isFront ? 'front' : 'rear'] = frame;
+        attachViewFrame(frame, socket, pivot, position);
+        b.box(frame, p.dark, 'sight-mount', 0, -.0115, 0, .024, .005, .016);
+        if (isFront) {
+            b.box(frame, p.dark, 'front-blade', 0, -.007, 0, .0035, .014, .010);
+            b.box(frame, p.edge, 'front-inlay', 0, -.0025, -.0055, .0015, .0025, .001);
+        }
+        else {
+            for (const x of [-.0085, .0085]) {
+                b.box(frame, p.dark, 'rear-notch', x, -.0045, 0, .005, .009, .014);
+                b.box(frame, p.edge, 'rear-inlay', x, -.002, -.0075, .0015, .0015, .001);
+            }
+        }
+    }
+    b.finish();
+    return anchors;
+}
 export function createWeaponArt(id: AuthoredWeaponId, scene: Scene, pivot: TransformNode, bodySocket: TransformNode, magazineSocket: TransformNode): WeaponArt {
     const p = palette(scene), b = new Parts(scene), root = new TransformNode(id + '-authored-body', scene);
     const bolt = new TransformNode(id + '-bolt', scene);
@@ -175,6 +200,8 @@ export function createWeaponArt(id: AuthoredWeaponId, scene: Scene, pivot: Trans
     const muzzle = new TransformNode(id + '-muzzle', scene);
     muzzle.parent = root;
     const vents: TransformNode[] = [];
+    let sightHeight = .135, rearSightZ = -.22;
+    const sights = {} as { rear: TransformNode; front: TransformNode };
     let magazine: TransformNode | undefined, pump: TransformNode | undefined, lever: TransformNode | undefined, shell: TransformNode | undefined;
     const box = (mat: PBRMaterial, name: string, x: number, y: number, z: number, w: number, h: number, d: number, rx = 0, ry = 0, rz = 0, parent = root) => b.box(parent, mat, id + '-' + name, x, y, z, w, h, d, rx, ry, rz);
     const tube = (mat: PBRMaterial, name: string, x: number, y: number, z: number, l: number, d: number, axis: 'z' | 'x' | 'y' = 'z', top = d, parent = root) => b.tube(parent, mat, id + '-' + name, x, y, z, l, d, axis, top);
@@ -188,10 +215,17 @@ export function createWeaponArt(id: AuthoredWeaponId, scene: Scene, pivot: Trans
             box(p.edge, 'rail-tooth', 0, y + .017, z, .084, .012, .017);
     };
     const sight = (z: number, y: number) => {
-        box(p.steel, 'sight-base', 0, y, z, .064, .025, .055);
-        box(p.dark, 'sight-left', -.024, y + .036, z, .014, .067, .025);
-        box(p.dark, 'sight-right', .024, y + .036, z, .014, .067, .025);
-        box(p.edge, 'sight-post', 0, y + .025, z, .008, .05, .01);
+        const anchor = new TransformNode(id + (z < 0 ? '-rear-iron' : '-front-iron'), scene);
+        anchor.parent = root;
+        anchor.position.set(0, y + .055, z);
+        sights[z < 0 ? 'rear' : 'front'] = anchor;
+        sightHeight = y + .055;
+        if (z < 0) rearSightZ = z;
+        box(p.steel, 'sight-base', 0, y + .025, z, .032, .04, .028);
+        box(p.dark, 'sight-left', -.012, y + .053, z, .006, .014, .018);
+        box(p.dark, 'sight-right', .012, y + .053, z, .006, .014, .018);
+        if (z > 0)
+            box(p.dark, 'sight-post', 0, y + .030, z, .005, .05, .01);
     };
     const grip = () => {
         box(p.dark, 'pistol-grip', .013, -.145, -.285, .083, .21, .10, -.25);
@@ -320,6 +354,7 @@ export function createWeaponArt(id: AuthoredWeaponId, scene: Scene, pivot: Trans
             box(p.edge, 'exposed-hammer', 0, .106, -.25, .035, .065, .04, -.3);
             box(p.brass, 'side-loading-gate', .056, -.025, -.125, .008, .046, .115);
             sight(.82, .105);
+            sight(-.22, .105);
         }
         else {
             grip();
@@ -330,6 +365,7 @@ export function createWeaponArt(id: AuthoredWeaponId, scene: Scene, pivot: Trans
             for (const x of [-.05, .05])
                 tube(p.steel, 'action-rod', x, -.025, .065, .40, .011);
             sight(.82, .106);
+            sight(-.22, .106);
         }
         box(p.brass, 'receiver-pin', .056, -.02, -.21, .005, .019, .019);
         shellPart();
@@ -382,6 +418,8 @@ export function createWeaponArt(id: AuthoredWeaponId, scene: Scene, pivot: Trans
         box(p.glow, 'charge-indicator', .103, .045, -.09, .009, .028, .19);
         box(p.steel, 'sight-bridge', 0, .145, -.08, .072, .046, .15);
         box(p.glow, 'sight-notch', 0, .173, -.12, .02, .009, .018);
+        sight(-.2, .205);
+        sight(.62, .205);
         magazinePart('cell');
         muzzle.position.set(0, .045, .8);
     }
@@ -442,6 +480,6 @@ export function createWeaponArt(id: AuthoredWeaponId, scene: Scene, pivot: Trans
     };
     reset();
     return {
-        root, muzzle, magazine, pump, lever, flip, bolt, shell, vents, kind: id, reset, update
+        root, muzzle, magazine, pump, lever, flip, bolt, shell, vents, kind: id, sights, sightLine: new Vector3(.08, .17 + sightHeight, .50 + rearSightZ), reset, update
     };
 }

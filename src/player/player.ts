@@ -17,7 +17,7 @@ export class Player {
         };
         this.camera = new UniversalCamera('player', new Vector3(this.position.x, 1.65, this.position.z), scene);
         this.camera.minZ = .04;
-        this.camera.maxZ = 65;
+        this.camera.maxZ = 300;
         this.camera.fov = 1.24;
         this.camera.inputs.clear();
     }
@@ -53,7 +53,7 @@ export class Player {
     render(alpha: number, dt: number, aiming: boolean, recoil = 0, reducedMotion = false) {
         const p = this.previous;
         const bob = !reducedMotion && this.moving ? Math.sin(this.distance * 9) * .018 : 0;
-        this.camera.position.set(p.x + (this.position.x - p.x) * alpha, 1.65 + bob, p.z + (this.position.z - p.z) * alpha);
+        this.camera.position.set(p.x + (this.position.x - p.x) * alpha, (p.y ?? 0) + ((this.position.y ?? 0) - (p.y ?? 0)) * alpha + 1.65 + bob, p.z + (this.position.z - p.z) * alpha);
         this.camera.rotation.set(this.pitch - recoil, this.yaw, 0);
         this.camera.fov += ((aiming ? .88 : 1.24) - this.camera.fov) * Math.min(1, dt * 13);
     }

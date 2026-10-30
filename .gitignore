@@ -3,3 +3,7 @@ dist/
 .DS_Store
 .openai/*.local.*
 *.log
+.tmp/
+# Assets converted from the user's installed Valve game stay local.
+public/source-private/
+__pycache__/

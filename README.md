@@ -109,3 +109,31 @@ npx vite preview --outDir ../../work/qa-dist --port 5174
 Visit `http://localhost:5174/?qa`. Run the **Stress 32** scenario for five minutes at Balanced quality and use F3 to inspect actual frame timing. Stress mode keeps the player alive and runs 32 infected, including four flyers, with normal animation, movement, collision and attacks. Test modes are clearly marked and are not shipped as an enabled gameplay option.
 
 The current mixed-horde smoke result is 60 FPS, p95 18.1 ms and zero sampled >50ms frames over approximately 115 seconds on an Apple M4 / 16 GB. See `public/benchmark-maps.json`; the older five-minute result is a historical baseline. Performance is a measured target, not a guarantee. Intel Iris Xe / 16 GB / Chrome at 1280×720 is the reference target: average ≥60 FPS, p95 ≤20ms, no recurring >50ms combat stalls after warm-up. See `VALIDATION.md` for actual observations and unverified targets.
+
+### Realistic infected variants
+
+The horde cycles through three textured models with distinct heads, clothing and silhouettes: WorldWar/Romero, Yaku and Parasite. Geometry and original 1024px diffuse/normal textures are retained. Mixamo walking, running, attack and death motions are retargeted to each skeleton; idle holds a pose and the two death slots share one motion. These are royalty-free for use in this game, not open-source assets or Left 4 Dead models. See `public/assets/infected-provenance.json` and the in-game credits. `?qa=infected` previews the three bodies together in development.
+
+### Larger maps and combat movement
+
+Both locations now span about 61 by 51 metres across four connected sectors, with a central junction, connecting loops, lighting and objectives in the outer sectors. Spawn selection favours concealed entrances roughly 13 metres away so the extra space does not produce long empty starts.
+
+There is no crosshair. Guns have physical rear notches and front blades/posts aligned with the camera at full ADS; the pistol and rifle use mounted metal sights and authored guns use their own sights. Idle breathing moves the weapon and shot direction together; ADS reduces angular sway by 85%, and reduced-motion settings disable it. Aim and reload transitions retain the existing authored hand rig.
+
+Infected have persistent direct/left/right approach roles, wall-aware lateral weaving, staggered walking, and runner pace bursts. They close directly within attack range rather than orbiting. This is original steering behaviour inspired by varied horde approaches, not Valve code or assets. Development `?qa=sights` evaluates the rear/front alignment of all eight firearms.
+
+### Local Left 4 Dead 2 port — 30 October 2026
+
+When `public/source-private/l4d2/manifest.json` exists, Hospital Isolation becomes the original No Mercy hospital interior (`c8m4_interior`). The local pack contains the BSP geometry and 194 prop models, all 976 patched NAV areas, five native infected (nurse, patient, surgeon, police, civilian), eight firearms, the knife, Bill and his first-person arms. The former plasma slot becomes the AK-47. Without the local pack, the existing maps and equipment remain available.
+
+The browser uses the original navigation rectangles, slopes and directional links, with floor-aware movement, shot obstruction and hitboxes. Press E near the elevator landing to transfer between the lower and upper floors; in Objective mode, secure the landing before riding during stage three. This is a browser adaptation: Source entity scripting, original lightmaps, dynamic doors, ragdolls and L4D's AI director are not reproduced. Native diffuse/normal maps and selected animation clips are converted to GLB.
+
+Regenerate from the installed game with:
+
+```powershell
+python scripts/import-l4d2-local.py --game "F:/SteamLibrary/steamapps/common/Left 4 Dead 2"
+```
+
+This uses the portable Blender 4.2.9 and SourceIO fe24260 already prepared in `.tmp/source-port/tools`; other locations can be passed using `--blender` and `--sourceio`. The installed game is read only. Converted Valve assets stay in the ignored `public/source-private` directory; local builds include this pack. SourceIO is MIT licensed; its notice is in `scripts/SOURCEIO-LICENSE.txt`.
+
+The local hospital repair uses authored fixture lights, preserves transparent glass, and exports posed/skinned props. Physics-only map ragdolls and the static Bill lobby preview are omitted; Bill's arms remain. Native infected are grounded walkers/runners. Additive weapon clips are composed with idle, and first-person sleeve geometry is cropped to keep it away from the eye during ADS.

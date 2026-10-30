@@ -499,58 +499,6 @@ kbd {
 .hud-help>span {
   margin: 0 9px;
 }
-.crosshair {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 24px;
-  height: 24px;
-  transform: translate(-50%,-50%);
-  opacity: .8;
-}
-.crosshair i {
-  position: absolute;
-  background: #e1e5ce;
-  box-shadow: 0 0 3px #000;
-}
-.crosshair i:nth-child(1) {
-  left: 11px;
-  top: 0;
-  width: 1px;
-  height: 5px;
-}
-.crosshair i:nth-child(2) {
-  left: 11px;
-  bottom: 0;
-  width: 1px;
-  height: 5px;
-}
-.crosshair i:nth-child(3) {
-  top: 11px;
-  left: 0;
-  height: 1px;
-  width: 5px;
-}
-.crosshair i:nth-child(4) {
-  top: 11px;
-  right: 0;
-  height: 1px;
-  width: 5px;
-}
-.crosshair b {
-  position: absolute;
-  top: 11px;
-  left: 11px;
-  width: 2px;
-  height: 2px;
-  background: #e1e5ce;
-}
-.crosshair.aiming i {
-  opacity: 0;
-}
-.crosshair.melee {
-  opacity: .3;
-}
 .hitmarker {
   position: absolute;
   left: 50%;

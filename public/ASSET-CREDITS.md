@@ -320,3 +320,18 @@ Babylon's Meshopt decoder is bundled from the installed package to avoid runtime
 Game renamed from WARD ZERO to One More Room In Hell. Original source credits above remain unchanged. Freight Depot layout, cargo props, terminal beacon, door favicon and map-selection graphics were authored locally, reusing the existing credited CC0 surface textures.
 
 Flying Shrieker: derived from the existing Rosswet Mobile / Morgan Nriu zombie body and clips credited above, with a smaller scale, altitude-driven movement, original torn membrane/tendon wings, procedural flapping, an original noise-and-vein membrane texture, and a descent before close attacks. No new character model or mocap was downloaded. Wing membranes and tendons are original geometry in `src/enemies/flyer-art.ts`; flight behavior and elevated hitboxes are in `src/enemies/enemies.ts`. Existing vocal recordings are pitch-varied for its screech.
+
+## Realistic infected variants
+
+WorldWar zombie (local name Romero), Yaku zombie and Parasite zombie - Adobe / Mixamo. Original textured geometry and skin weights retained; animations retargeted and packed into self-contained GLBs, runtime scale adapted. Mixamo permits royalty-free use of its characters and animations in games; these assets are not open source and are not offered as a standalone model pack.
+
+- [Adobe usage terms](https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html)
+- [Model download mirror](https://github.com/alexanderbenjamin4516-png/zombie-hunter/tree/main/models)
+- [Motion download mirror](https://github.com/Barrsum/Vajra/tree/492b7134ddca16ce1c0206d5d7ef0c5c807ac271/assets)
+- Source filenames, transformations and build notes: `assets/infected-provenance.json`.
+
+The earlier Thin Zombie asset remains in the source archive; active infected now use the three Mixamo models. Flying infected combine these bodies with the original locally authored wings. Idle holds a mapped pose; both death slots share one clip.
+
+## Local L4D2 assets — 30 October 2026
+
+Optional local conversion of the user's installed Left 4 Dead 2 files: Valve Corporation. No Mercy hospital interior `c8m4_interior`, patched navigation data, hospital/common infected, native weapon viewmodels, Bill and Bill's arms. These are proprietary Valve assets, retained locally in the git-ignored `source-private/l4d2` directory. The SourceIO conversion tool is [REDxEYE/SourceIO](https://github.com/REDxEYE/SourceIO), revision fe24260, MIT; see `scripts/SOURCEIO-LICENSE.txt`. The game installation is left unchanged. The Mixamo pack remains the fallback when this local pack is absent.

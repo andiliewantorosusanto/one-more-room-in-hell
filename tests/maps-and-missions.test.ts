@@ -26,7 +26,8 @@ test('changing maps clears the previous collision and flow data', () => {
     grid.configure(getMap('depot'));
     assert.deepEqual(grid.cells, new WorldGrid(getMap('depot')).cells);
     assert.ok(grid.distances.every(d => d === -1));
-    assert.equal(grid.obstacles.length, 4);
+    assert.equal(grid.obstacles.length, getMap('depot').obstacles.length);
+    assert.equal(grid.obstacles.length, 16);
 });
 test('objective encounters require cleared enemies, reach, line of sight and continuous use', () => {
     const run = new RunRules(), objective = new ObjectiveRules();

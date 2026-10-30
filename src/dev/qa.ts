@@ -1,4 +1,4 @@
-import { Vector3 } from '@babylonjs/core';
+import { Matrix, Vector3 } from '@babylonjs/core';
 import type { GameInstance } from '../game/Game.ts';
 import { SHOP_WEAPONS, WEAPONS, type WeaponId } from '../weapons/weapon-rules.ts';
 export function setupQA(game: GameInstance) {
@@ -27,7 +27,7 @@ export function setupQA(game: GameInstance) {
         game.run.alive = 1;
         const p = game.player.position;
         const point = {
-            x: p.x + Math.sin(game.player.yaw) * distance, z: p.z + Math.cos(game.player.yaw) * distance
+            x: p.x + Math.sin(game.player.yaw) * distance, z: p.z + Math.cos(game.player.yaw) * distance, y: p.y
         };
         game.enemies.spawn(point, false);
         game.enemies.zombies.find(z => z.life === 'alive')!.debugFrozen = true;
@@ -42,9 +42,9 @@ export function setupQA(game: GameInstance) {
         const z = game.enemies.zombies.find(z => z.life === 'alive');
         if (!z)
             return;
-        const p = head ? z.head!.getAbsolutePosition() : new Vector3(z.position.x, 1.08, z.position.z);
+        const p = head ? z.head!.getAbsolutePosition() : new Vector3(z.position.x, (z.position.y ?? 0) + 1.08, z.position.z);
         game.player.yaw = Math.atan2(p.x - game.player.position.x, p.z - game.player.position.z);
-        game.player.pitch = -Math.atan2(p.y - 1.65, Math.hypot(p.x - game.player.position.x, p.z - game.player.position.z));
+        game.player.pitch = -Math.atan2(p.y - (game.player.position.y ?? 0) - 1.65, Math.hypot(p.x - game.player.position.x, p.z - game.player.position.z));
     }
     function clearWave() {
         game.enemies.reset();
@@ -70,6 +70,67 @@ export function setupQA(game: GameInstance) {
     add('Start test', start);
     add('Trader', () => openTrader());
     add('Armory', armory);
+    add('Port diagnostics', () => {
+        game.player.render(1, .016, game.aiming);
+        game.view.update(.016, game.weapons, false, false, game.aiming, 0, true);
+        game.scene.render();
+        const model = game.view.models.get(game.weapons.current)!;
+        const nodes = model.pivot.getChildTransformNodes().filter(n => /Camera|weapon_bone|attach_muzzle|Head1/.test(n.name));
+        panel.querySelector('#qa-results')!.textContent = JSON.stringify({
+            position: game.player.position, nativeAreas: game.grid.source?.areas.length,
+            bones: nodes.map(n => ({ name: n.name, local: Vector3.TransformCoordinates(n.getAbsolutePosition(), Matrix.Invert(model.pivot.getWorldMatrix())).asArray() })),
+            groups: model.groups.map(g => ({ name: g.name, from: g.from, to: g.to })),
+            bounds: model.pivot.getHierarchyBoundingVectors(),
+        }, null, 1);
+    });
+    add('Hospital corridor', () => {
+        if (!game.grid.source) return;
+        start(); game.enemies.reset();
+        game.player.position = game.grid.source.center(game.grid.source.closest({ x: 2, z: 12, y: 0 }));
+        game.player.previous = { ...game.player.position };
+        game.player.yaw = 0; game.player.pitch = 0;
+    });
+    add('Port combat check', () => {
+        const output = panel.querySelector('#qa-results')!;
+        output.textContent = '';
+        try {
+            const nav = game.grid.source;
+            if (!nav) throw Error('No local Source map');
+            start(); game.enemies.reset();
+            const centers = nav.areas.map((_, i) => nav.center(i)).filter(p => (p.y ?? 0) < 1 && nav.clear(p.x, p.z, .3, p.y));
+            let pair: typeof centers | undefined;
+            outer: for (const a of centers) for (const b of centers) {
+                const d = Math.hypot(b.x - a.x, b.z - a.z);
+                if (d < 4 || d > 6 || !nav.lineClear(a, b)) continue;
+                const direction = new Vector3((b.x - a.x) / d, 0, (b.z - a.z) / d);
+                if (game.grid.wallDistance({ ...a, y: (a.y ?? 0) + 1.5 }, direction, d + .5) > d) { pair = [a, b]; break outer; }
+            }
+            if (!pair) throw Error('No unobstructed hospital firing lane');
+            game.player.position = { ...pair[0] }; game.player.previous = { ...pair[0] };
+            game.enemies.spawn(pair[1], false);
+            const enemy = game.enemies.zombies.find(z => z.life === 'alive')!;
+            enemy.debugFrozen = true;
+            game.run.spawned = game.run.alive = 1;
+            game.enemies.render(1); game.scene.render();
+            if (!enemy.head) throw Error('Missing native head bone');
+            const spread = WEAPONS.pistol.spread;
+            try {
+                WEAPONS.pistol.spread = 0;
+                for (let i = 0; i < 2; i++) {
+                    aim(true); game.view.recoil = 0; game.view.sway = { yaw: 0, pitch: 0 };
+                    game.weapons.tick(1); game.shoot();
+                }
+            } finally { WEAPONS.pistol.spread = spread; }
+            if (enemy.life !== 'dead' || game.weapons.ammo !== 10 || game.run.headshots !== 1) throw Error('Native two-headshot kill / ammunition check failed');
+            output.textContent = 'PASS native head bone and two-shot kill\nPASS two rounds consumed\nPASS real hospital geometry firing lane\n';
+            const before = { ...game.player.position };
+            for (let i = 0; i < 30; i++) game.grid.move(game.player.position, (pair[1].x - before.x) / 120, (pair[1].z - before.z) / 120, .27);
+            if (Math.hypot(game.player.position.x - before.x, game.player.position.z - before.z) < .1) throw Error('Hospital movement blocked');
+            output.textContent += 'PASS navigation movement\nALL PORT COMBAT CHECKS PASSED';
+            game.player.previous = { ...game.player.position }; game.player.render(1, .016, false); game.scene.render();
+        } catch (error) { output.textContent += 'FAIL ' + String(error); }
+    });
+    add('Hide checks', () => { panel.style.display = 'none'; });
     add('Target 4m', () => target(4));
     add('Target 1m', () => target(1.05));
     add('Flying target', () => {
@@ -82,6 +143,55 @@ export function setupQA(game: GameInstance) {
         }, false, 'flyer');
         game.enemies.zombies.find(z => z.life === 'alive')!.debugFrozen = true;
     });
+    const lineup = () => {
+        start();
+        game.enemies.reset();
+        const p = game.player.position;
+        game.player.yaw = Math.PI;
+        game.player.pitch = .08;
+        for (let i = 0; i < 3; i++) {
+            game.enemies.spawn({ x: p.x + (i - 1) * 1.1, z: p.z - 3 }, false);
+            const z = game.enemies.zombies[i];
+            z.debugFrozen = true;
+            z.root.rotation.y = 0;
+        }
+    };
+    add('Infected lineup', lineup);
+    const sightChecks = () => {
+        start();
+        game.enemies.reset();
+        game.weapons.inventory = Object.keys(WEAPONS) as WeaponId[];
+        const output = panel.querySelector('#qa-results')!;
+        output.textContent = '';
+        for (const id of game.weapons.inventory.filter(id => id !== 'knife')) {
+            game.weapons.switchTo(id);
+            game.view.equip(id);
+            game.view.update(1, game.weapons, false, false, true, 0, true);
+            game.player.render(1, 0, true, 0, true);
+            game.scene.render();
+            const sights = game.view.models.get(id)!.sights;
+            if (!sights) throw Error('Missing physical sights: ' + id);
+            const inverse = Matrix.Invert(game.player.camera.getWorldMatrix());
+            for (const anchor of [sights.rear, sights.front]) {
+                const p = Vector3.TransformCoordinates(anchor.getAbsolutePosition(), inverse);
+                if (Math.abs(p.x) > .004 || Math.abs(p.y) > .004 || p.z < .04) {
+                    output.textContent += `FAIL ${id} ${anchor.name}: ${p.asArray().map(v => v.toFixed(4)).join(', ')}\n`;
+                    game.pause(true);
+                    return;
+                }
+            }
+            output.textContent += 'PASS aligned physical sights: ' + id + '\n';
+        }
+        game.weapons.switchTo('pistol');
+        game.view.equip('pistol');
+        output.textContent += 'ALL IRON SIGHT CHECKS PASSED';
+        game.view.update(1, game.weapons, false, false, true, 0, true);
+        game.ui.render(game.run, game.weapons, 0, true);
+        game.scene.render();
+        game.paused = true;
+        game.scene.animationsEnabled = false;
+    };
+    add('Sight checks', sightChecks);
     add('Mission terminal', () => {
         if (game.run.mode !== 'objective')
             return;
@@ -183,12 +293,17 @@ export function setupQA(game: GameInstance) {
             start();
             await wait(350);
             expect(game.weapons.current === 'pistol' && game.weapons.inventory.join(',') === 'pistol,knife', 'pistol and knife starting loadout');
-            game.canvas.dispatchEvent(new MouseEvent('mousedown', {
-                button: 0, bubbles: true
+            const trigger = new PointerEvent('pointerdown', {
+                button: 0, buttons: 1, pointerId: 1, pointerType: 'mouse', bubbles: true, cancelable: true
+            });
+            game.canvas.dispatchEvent(trigger);
+            expect(!trigger.defaultPrevented, 'engine preserves mouse events for firing and aiming');
+            if (!trigger.defaultPrevented)
+                game.canvas.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
+            window.dispatchEvent(new PointerEvent('pointerup', {
+                button: 0, pointerId: 1, pointerType: 'mouse', bubbles: true
             }));
-            window.dispatchEvent(new MouseEvent('mouseup', {
-                button: 0, bubbles: true
-            }));
+            window.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }));
             await wait(300);
             expect(game.weapons.ammo === 11, 'quick pistol click fires');
             target(4);
@@ -516,6 +631,10 @@ export function setupQA(game: GameInstance) {
     const mode = new URLSearchParams(location.search).get('qa');
     if (mode === 'flight')
         setTimeout(() => void flightCombat(), 700);
+    if (mode === 'infected')
+        setTimeout(lineup, 700);
+    if (mode === 'sights')
+        setTimeout(sightChecks, 700);
     if (mode === 'missions')
         setTimeout(() => void missionChecks(), 700);
     if (mode === 'checks')
